@@ -8,7 +8,7 @@ const register = {
     name: Joi.string().required(),
     businessName: Joi.string().required().min(3).max(100), // Add validation for businessName
     country: Joi.string().required().min(2).max(50), // Add validation for country
-    currency: Joi.string().required().min(3).max(5),
+    currency: Joi.string().required().min(1).max(5),
   }),
 };
 
