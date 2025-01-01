@@ -1,7 +1,7 @@
 const allRoles = {
-  member: [],
-  lead: [],
-  owner: [],
+  member: ['getUsers'],
+  lead: ['getUsers', 'manageUsers'],
+  owner: ['getUsers', 'manageUsers'],
   admin: ['getUsers', 'manageUsers'],
 };
 

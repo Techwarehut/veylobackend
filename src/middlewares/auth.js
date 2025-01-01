@@ -2,6 +2,7 @@ const passport = require('passport');
 const httpStatus = require('http-status');
 const ApiError = require('../utils/ApiError');
 const { roleRights } = require('../config/roles');
+const tenantIdCheck = require('./tenantidCheck');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
@@ -21,12 +22,20 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
 };
 
 const auth =
-  (...requiredRights) =>
+  (checkTenant = false, ...requiredRights) =>
   async (req, res, next) => {
     return new Promise((resolve, reject) => {
       passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
     })
-      .then(() => next())
+      .then(() => {
+        if (checkTenant) {
+          // If checkTenant flag is true, run the tenantId check
+
+          return tenantIdCheck(req, res, next);
+        } else {
+          return next();
+        }
+      })
       .catch((err) => next(err));
   };
 

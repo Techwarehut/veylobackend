@@ -55,9 +55,51 @@ If you did not create an account, then ignore this email.`;
   await sendEmail(to, subject, text);
 };
 
+/**
+ * Send an onboarding email
+ * @param {string} to - The recipient email address
+ * @param {string} username - The username (email in this case)
+ * @param {string} password - The generated password
+ * @returns {Promise}
+ */
+const sendOnboardingEmail = async (to, name, password) => {
+  const subject = 'Welcome to Veylo - Your Account Details';
+
+  // Define the links (login page and download apps links)
+  const loginUrl = `https://veylo.app/login`; // Replace with your actual login page URL
+  const downloadAppUrl = `https://veylo.app/download`; // Replace with the actual app download page URL
+
+  // Construct the email body
+  const text = `Dear ${name},
+
+Congratulations on joining Veylo! We're excited to have you on board.
+
+To get started, use the following credentials to log in to your account:
+- Username: ${to}
+- Password: ${password}
+
+You can log in to your account using the link below:
+- Login Link: ${loginUrl}
+
+Additionally, download our mobile app from the links below to start using Veylo on the go:
+- Download on iOS: ${downloadAppUrl} (iOS)
+- Download on Android: ${downloadAppUrl} (Android)
+
+If you have any questions or issues, feel free to reach out to our support team.
+
+Best regards,
+The Veylo Team
+
+If you did not sign up for Veylo, please ignore this email.`;
+
+  // Send the email using the sendEmail function
+  await sendEmail(to, subject, text);
+};
+
 module.exports = {
   transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
+  sendOnboardingEmail,
 };

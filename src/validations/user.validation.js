@@ -3,15 +3,23 @@ const { password, objectId } = require('./custom.validation');
 
 const createUser = {
   body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password),
-    name: Joi.string().required(),
-    role: Joi.string().required().valid('user', 'admin'),
+    email: Joi.string().email().required(), // Email is required and must be a valid email
+
+    name: Joi.string().required(), // Name can be an empty string or null (optional)
+    role: Joi.string().valid('member', 'lead').required(), // Role is optional, but must be one of these
+    phone: Joi.string().allow('', null).optional(), // Phone can be empty or null
+    profileUrl: Joi.string().allow('', null).optional(),
+
+    emergencyContact: Joi.object({
+      ename: Joi.string().allow('', null).optional(), // Emergency name can be empty or null
+      ephone: Joi.string().allow('', null).optional(), // Emergency phone can be empty or null
+    }).optional(), // Emergency contact is optional
   }),
 };
 
 const getUsers = {
   query: Joi.object().keys({
+    tenantId: Joi.string().optional(), // Add tenantId as a required string
     name: Joi.string(),
     role: Joi.string(),
     sortBy: Joi.string(),
@@ -32,9 +40,16 @@ const updateUser = {
   }),
   body: Joi.object()
     .keys({
-      email: Joi.string().email(),
-      password: Joi.string().custom(password),
-      name: Joi.string(),
+      email: Joi.string().email().required(), // Email is required and must be a valid email
+
+      name: Joi.string().allow('', null).optional(), // Name can be an empty string or null (optional)
+      role: Joi.string().valid('member', 'owner', 'lead').required(), // Role is optional, but must be one of these
+      phone: Joi.string().allow('', null).optional(), // Phone can be empty or null
+      profileUrl: Joi.string().allow('', null).optional(),
+      emergencyContact: Joi.object({
+        ename: Joi.string().allow('', null).optional(), // Emergency name can be empty or null
+        ephone: Joi.string().allow('', null).optional(), // Emergency phone can be empty or null
+      }).optional(), // Emergency contact is optional
     })
     .min(1),
 };

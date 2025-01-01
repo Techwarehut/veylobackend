@@ -49,6 +49,7 @@ const userSchema = mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant', // Reference to the Tenant model (this assumes you have a Tenant model)
       required: true,
+      index: true,
     },
     isActive: {
       // Mark user as active or inactive
