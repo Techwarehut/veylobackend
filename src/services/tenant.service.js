@@ -9,9 +9,6 @@ const ApiError = require('../utils/ApiError');
  */
 const createTenant = async (tenantBody) => {
   try {
-    // Log tenant data for debugging
-    console.log('Creating tenant with data:', tenantBody);
-
     // Ensure all required fields are provided and valid
     if (
       !tenantBody.businessName ||
@@ -31,10 +28,9 @@ const createTenant = async (tenantBody) => {
 
     // Create the tenant
     const tenant = await Tenant.create(tenantBody);
-    console.log('Tenant created successfully:', tenant); // Log the created tenant
+
     return tenant;
   } catch (error) {
-    console.error('Error in tenant service:', error); // Log the error details
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create tenant');
   }
 };

@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const { authService, userService, tokenService, emailService, tenantService } = require('../services');
 const ApiError = require('../utils/ApiError');
+const logger = require('../config/logger');
 
 /* const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
@@ -39,12 +40,8 @@ const register = catchAsync(async (req, res) => {
   };
 
   let tenant;
-  try {
-    tenant = await tenantService.createTenant(tenantData);
-  } catch (error) {
-    // Handle tenant creation failure
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create tenant');
-  }
+
+  tenant = await tenantService.createTenant(tenantData);
 
   // Step 2: Create the user and associate with the tenant
   const userData = {
@@ -55,18 +52,30 @@ const register = catchAsync(async (req, res) => {
   };
 
   let user;
-  try {
-    user = await userService.createUser(userData);
-  } catch (error) {
-    // Handle user creation failure
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create user');
-  }
+
+  user = await userService.createUser(userData);
 
   // Step 3: Generate auth tokens for the user
   const tokens = await tokenService.generateAuthTokens(user);
 
   // Step 4: Respond with user, tenant, and tokens
   res.status(httpStatus.CREATED).send({ user, tenant, tokens });
+
+  const verifyEmailToken = await tokenService.generateVerifyEmailToken(user);
+  emailService.sendVerificationEmail(user.email, verifyEmailToken, user.name).catch((error) => {
+    // Create a new ApiError for consistent error handling
+    const emailError = new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Error sending verification email', true, error.stack);
+
+    // Log the error using the logger
+    logger.error('Error sending verification email', {
+      message: emailError.message,
+      stack: emailError.stack,
+      email: req.user.email,
+    });
+
+    // Optionally throw the error so it can be handled by errorHandler
+    throw emailError; // This will pass the error to the next middleware
+  });
 });
 
 const login = catchAsync(async (req, res) => {
