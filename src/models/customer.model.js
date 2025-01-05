@@ -119,8 +119,8 @@ const customerSchema = mongoose.Schema(
       type: String,
       default: '',
       validate(value) {
-        if (value && !validator.isMobilePhone(value, 'any')) {
-          throw new Error('Invalid phone number');
+        if (value && !validator.isURL(value, { require_protocol: true })) {
+          throw new Error('Invalid URL');
         }
       },
     },

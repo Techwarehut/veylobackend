@@ -109,6 +109,84 @@ const deactivateCustomer = async (customerId) => {
   return customer;
 };
 
+/**
+ * Get site locations by customer ID
+ * @param {ObjectId} customerId
+ * @returns {Promise<Array>}
+ */
+const getSiteLocations = async (customerId) => {
+  const customer = await getCustomerById(customerId);
+  if (!customer) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
+  }
+  return customer.siteLocations || [];
+};
+
+/**
+ * Add a new site location for a customer
+ * @param {ObjectId} customerId
+ * @param {Object} siteLocationData
+ * @returns {Promise<Object>}
+ */
+const addSiteLocation = async (customerId, siteLocationData) => {
+  const customer = await getCustomerById(customerId);
+  if (!customer) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
+  }
+  customer.siteLocations = customer.siteLocations || [];
+  customer.siteLocations.push(siteLocationData);
+  await customer.save();
+
+  // Instead of fetching customer again, return the last added siteLocation directly
+  return customer.siteLocations[customer.siteLocations.length - 1];
+};
+
+/**
+ * Delete a site location by customer ID and site location ID
+ * @param {ObjectId} customerId
+ * @param {ObjectId} siteLocationId
+ * @returns {Promise<void>}
+ */
+const deleteSiteLocation = async (customerId, siteLocationId) => {
+  const customer = await getCustomerById(customerId);
+  if (!customer) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
+  }
+
+  const siteLocationIndex = customer.siteLocations.findIndex((location) => location._id.toString() === siteLocationId);
+
+  if (siteLocationIndex === -1) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Site location not found');
+  }
+
+  customer.siteLocations.splice(siteLocationIndex, 1);
+  await customer.save();
+};
+
+/**
+ * Update a site location by customer ID and site location ID
+ * @param {ObjectId} customerId
+ * @param {ObjectId} siteLocationId
+ * @param {Object} updateBody
+ * @returns {Promise<Object>}
+ */
+const updateSiteLocation = async (customerId, siteLocationId, updateBody) => {
+  const customer = await getCustomerById(customerId);
+  if (!customer) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
+  }
+
+  const siteLocation = customer.siteLocations.find((location) => location._id.toString() === siteLocationId);
+
+  if (!siteLocation) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Site location not found');
+  }
+
+  Object.assign(siteLocation, updateBody);
+  await customer.save();
+  return siteLocation;
+};
+
 module.exports = {
   createCustomer,
   queryCustomers,
@@ -118,4 +196,8 @@ module.exports = {
   deleteCustomerById,
   activateCustomer,
   deactivateCustomer,
+  addSiteLocation,
+  getSiteLocations,
+  deleteSiteLocation,
+  updateSiteLocation,
 };

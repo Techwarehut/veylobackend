@@ -25,4 +25,13 @@ router
   .route('/:customerId/deactivate')
   .post(auth('manageCustomers'), validate(customerValidation.deactivateCustomer), customerController.deactivateCustomer);
 
+router
+  .route('/:customerId/siteLocations')
+  .get(auth('getCustomers'), validate(customerValidation.getSiteLocations), customerController.getSiteLocations)
+  .post(auth('manageCustomers'), validate(customerValidation.addSiteLocation), customerController.addSiteLocation);
+router
+  .route('/:customerId/siteLocations/:siteLocationId')
+  .delete(auth('manageCustomers'), validate(customerValidation.deleteSiteLocation), customerController.deleteSiteLocation)
+  .patch(auth('manageCustomers'), validate(customerValidation.updateSiteLocation), customerController.updateSiteLocation);
+
 module.exports = router;

@@ -73,6 +73,7 @@ const updateCustomer = {
       siteLocations: Joi.array()
         .items(
           Joi.object().keys({
+            _id: Joi.string().optional(),
             siteName: Joi.string().allow('', null).optional(),
             siteContactPerson: Joi.string().allow('', null).optional(),
             siteContactPhone: Joi.string().allow('', null).optional(),
@@ -106,6 +107,54 @@ const deactivateCustomer = {
   }),
 };
 
+// New validation for fetching site locations
+const getSiteLocations = {
+  params: Joi.object().keys({
+    customerId: Joi.string().custom(objectId).required(), // Customer ID is required
+  }),
+};
+
+// New validation for adding a site location
+const addSiteLocation = {
+  params: Joi.object().keys({
+    customerId: Joi.string().custom(objectId).required(), // Customer ID is required
+  }),
+  body: Joi.object().keys({
+    siteName: Joi.string().allow('', null).optional(),
+    siteContactPerson: Joi.string().allow('', null).optional(),
+    siteContactPhone: Joi.string().allow('', null).optional(),
+    AddressLine: Joi.string().allow('', null).optional(),
+    City: Joi.string().allow('', null).optional(),
+    Province: Joi.string().allow('', null).optional(),
+    zipcode: Joi.string().allow('', null).optional(),
+  }),
+};
+
+const deleteSiteLocation = {
+  params: Joi.object().keys({
+    customerId: Joi.string().custom(objectId).required(), // Customer ID is required
+    siteLocationId: Joi.string().custom(objectId).required(), // Site Location ID is required
+  }),
+};
+
+const updateSiteLocation = {
+  params: Joi.object().keys({
+    customerId: Joi.string().custom(objectId).required(), // Customer ID is required
+    siteLocationId: Joi.string().custom(objectId).required(), // Site Location ID is required
+  }),
+  body: Joi.object()
+    .keys({
+      siteName: Joi.string().allow('', null).optional(),
+      siteContactPerson: Joi.string().allow('', null).optional(),
+      siteContactPhone: Joi.string().allow('', null).optional(),
+      AddressLine: Joi.string().allow('', null).optional(),
+      City: Joi.string().allow('', null).optional(),
+      Province: Joi.string().allow('', null).optional(),
+      zipcode: Joi.string().allow('', null).optional(),
+    })
+    .min(1), // Ensure at least one field is updated
+};
+
 module.exports = {
   createCustomer,
   getCustomers,
@@ -114,4 +163,8 @@ module.exports = {
   deleteCustomer,
   activateCustomer,
   deactivateCustomer,
+  getSiteLocations,
+  addSiteLocation,
+  deleteSiteLocation,
+  updateSiteLocation,
 };

@@ -65,6 +65,38 @@ const deactivateCustomer = catchAsync(async (req, res) => {
   res.send(customer);
 });
 
+const getSiteLocations = catchAsync(async (req, res) => {
+  const customerId = req.params.customerId;
+  const siteLocations = await customerService.getSiteLocations(customerId);
+
+  if (!siteLocations) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'No site locations found for the customer');
+  }
+
+  res.send(siteLocations);
+});
+
+const addSiteLocation = catchAsync(async (req, res) => {
+  const customerId = req.params.customerId;
+  const siteLocationData = req.body;
+  const siteLocation = await customerService.addSiteLocation(customerId, siteLocationData);
+
+  res.status(httpStatus.CREATED).send(siteLocation);
+});
+
+const deleteSiteLocation = catchAsync(async (req, res) => {
+  const { customerId, siteLocationId } = req.params;
+  await customerService.deleteSiteLocation(customerId, siteLocationId);
+  res.status(httpStatus.NO_CONTENT).send();
+});
+
+const updateSiteLocation = catchAsync(async (req, res) => {
+  const { customerId, siteLocationId } = req.params;
+  const updatedData = req.body;
+  const updatedSiteLocation = await customerService.updateSiteLocation(customerId, siteLocationId, updatedData);
+  res.send(updatedSiteLocation);
+});
+
 module.exports = {
   createCustomer,
   getCustomers,
@@ -73,4 +105,8 @@ module.exports = {
   deleteCustomer,
   activateCustomer,
   deactivateCustomer,
+  getSiteLocations,
+  addSiteLocation,
+  deleteSiteLocation,
+  updateSiteLocation,
 };
