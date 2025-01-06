@@ -51,6 +51,9 @@ const getUsers = catchAsync(async (req, res) => {
     filter.tenantID = req.query.tenantId; // Filter users by tenantId
   }
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  if (!options.sortBy) {
+    options.sortBy = 'name'; // Default to sorting by name
+  }
 
   const result = await userService.queryUsers(filter, options);
 

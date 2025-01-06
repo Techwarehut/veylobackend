@@ -26,7 +26,10 @@ const getCustomers = catchAsync(async (req, res) => {
   }
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
-  console.log(filter, options);
+  if (!options.sortBy) {
+    options.sortBy = 'businessName'; // Default to sorting by name
+  }
+
   const result = await customerService.queryCustomers(filter, options);
 
   res.send(result);
