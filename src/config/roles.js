@@ -1,6 +1,16 @@
 const allRoles = {
-  member: ['getUsers'],
-  lead: ['getUsers', 'getCustomers', 'manageCustomers', 'manageVendors', 'getVendors', 'deletePurchaseOrders'],
+  member: ['getUsers', 'addPurchaseOrders', 'getPurchaseOrders', 'updatePurchaseOrders'],
+  lead: [
+    'getUsers',
+    'getCustomers',
+    'manageCustomers',
+    'manageVendors',
+    'getVendors',
+    'deletePurchaseOrders',
+    'addPurchaseOrders',
+    'getPurchaseOrders',
+    'updatePurchaseOrders',
+  ],
   owner: [
     'getUsers',
     'manageUsers',
@@ -10,6 +20,9 @@ const allRoles = {
     'getVendors',
     'approvePurchaseOrders',
     'deletePurchaseOrders',
+    'addPurchaseOrders',
+    'getPurchaseOrders',
+    'updatePurchaseOrders',
   ],
   admin: [
     'getUsers',
@@ -20,6 +33,9 @@ const allRoles = {
     'getVendors',
     'approvePurchaseOrders',
     'deletePurchaseOrders',
+    'addPurchaseOrders',
+    'getPurchaseOrders',
+    'updatePurchaseOrders',
   ],
 };
 

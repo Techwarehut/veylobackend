@@ -22,19 +22,13 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
 };
 
 const auth =
-  (checkTenant = false, ...requiredRights) =>
+  (...requiredRights) =>
   async (req, res, next) => {
     return new Promise((resolve, reject) => {
       passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
     })
       .then(() => {
-        if (checkTenant) {
-          // If checkTenant flag is true, run the tenantId check
-
-          return tenantIdCheck(req, res, next);
-        } else {
-          return next();
-        }
+        return tenantIdCheck(req, res, next);
       })
       .catch((err) => next(err));
   };

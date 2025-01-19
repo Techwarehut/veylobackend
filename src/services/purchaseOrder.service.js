@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { PurchaseOrder } = require('../models');
 const ApiError = require('../utils/ApiError');
+const mongoose = require('mongoose');
 
 /**
  * Create a purchase order
@@ -67,9 +68,15 @@ const deletePurchaseOrderById = async (purchaseOrderId) => {
  * @param {string} status
  * @returns {Promise<PurchaseOrder>}
  */
-const updatePurchaseOrderStatus = async (purchaseOrderId, status) => {
+const updatePurchaseOrderStatus = async (purchaseOrderId, status, userId) => {
   const purchaseOrder = await getPurchaseOrderById(purchaseOrderId);
   purchaseOrder.status = status;
+
+  // If status is 'Approved' or 'Rejected', store the userId in approvedBy
+  if (status === 'Approved' || status === 'Rejected') {
+    purchaseOrder.approvedBy = mongoose.Types.ObjectId(userId); // Ensure userId is ObjectId type
+  }
+
   await purchaseOrder.save();
   return purchaseOrder;
 };

@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { purchaseOrderService } = require('../services');
 const { PurchaseOrder } = require('../models');
+const mongoose = require('mongoose');
 
 // Create a new purchase order
 const createPurchaseOrder = catchAsync(async (req, res) => {
@@ -113,15 +114,24 @@ const deletePurchaseOrder = catchAsync(async (req, res) => {
 // Update the status of a purchase order
 const updateStatus = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
-  const { status } = req.body;
+  const { status, userId } = req.body;
 
-  const purchaseOrder = await purchaseOrderService.updatePurchaseOrderStatus(purchaseOrderId, status);
+  const purchaseOrder = await purchaseOrderService.updatePurchaseOrderStatus(purchaseOrderId, status, userId);
 
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
-  res.send(purchaseOrder);
+  // Populate references (if required)
+  const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
+    { path: 'vendor', select: 'id companyName' },
+    { path: 'requestedBy', select: 'id name profileUrl' },
+    { path: 'approvedBy', select: 'id name profileUrl' },
+    { path: 'Customer', select: 'id  businessName' },
+    // { path: 'jobID', select: 'jobTitle jobCode' },
+  ]);
+
+  res.send(populatedResult);
 });
 
 // Get purchase orders for a specific customer
@@ -145,7 +155,12 @@ const getPurchaseOrdersByCustomer = catchAsync(async (req, res) => {
 // Add a new item to a purchase order
 const addItemToPurchaseOrder = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
-  const { itemId, itemName, quantity, price } = req.body;
+  const { itemName, quantity, price } = req.body;
+
+  // Validate input
+  if (!itemName || quantity <= 0 || price < 0) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid item details');
+  }
 
   // Find the purchase order by ID
   const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
@@ -154,7 +169,7 @@ const addItemToPurchaseOrder = catchAsync(async (req, res) => {
   }
 
   // Create a new purchase order item
-  const newItem = { itemId, itemName, quantity, price };
+  const newItem = { itemName, quantity, price };
 
   // Add the new item to the items array
   purchaseOrder.items.push(newItem);
@@ -178,7 +193,7 @@ const addItemToPurchaseOrder = catchAsync(async (req, res) => {
 
 // Remove an item from a purchase order
 const removeItemFromPurchaseOrder = catchAsync(async (req, res) => {
-  const { purchaseOrderId, itemId } = req.params;
+  const { purchaseOrderId, id } = req.params;
 
   // Find the purchase order by ID
   const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
@@ -187,7 +202,8 @@ const removeItemFromPurchaseOrder = catchAsync(async (req, res) => {
   }
 
   // Find and remove the item from the items array
-  const itemIndex = purchaseOrder.items.findIndex((item) => item.itemId === itemId);
+
+  const itemIndex = purchaseOrder.items.findIndex((item) => item._id.equals(mongoose.Types.ObjectId(id)));
   if (itemIndex === -1) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Item not found in this purchase order');
   }
