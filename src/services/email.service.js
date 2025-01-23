@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/config');
 const logger = require('../config/logger');
+const PurchaseOrder = require('../models/purchaseOrder.model');
+const { generatePurchaseOrderPDF } = require('./pdf.service');
 
 const transport = nodemailer.createTransport(config.email.smtp);
 /* istanbul ignore next */
@@ -99,10 +101,44 @@ If you did not sign up for Veylo, please ignore this email.`;
   await sendEmail(to, subject, text);
 };
 
+/**
+ * Send an onboarding email
+ * @param {PurchaseOrder} purchaseOrder - The generated password
+ * @returns {Promise}
+ */
+const sendPurchaseOrderEmail = async (purchaseOrder) => {
+  const subject = `Purchase Order #${purchaseOrder.purchaseOrderNumber}`;
+  const contactName = purchaseOrder.vendor.contactPerson?.name || purchaseOrder.vendor.companyName;
+
+  // Construct the email body
+  const text = `Dear ${contactName},\n\nPlease find attached the purchase order #${purchaseOrder.purchaseOrderNumber}.\n\nBest regards,\nThe Veylo Team`;
+
+  // Generate the PDF for the purchase order
+  const pdfBuffer = await generatePurchaseOrderPDF(purchaseOrder);
+
+  // Send the email with the PDF attached
+  const msg = {
+    from: config.email.from,
+    to: purchaseOrder.vendor.contactPerson.email,
+    subject,
+    text,
+    attachments: [
+      {
+        filename: `purchase-order-${purchaseOrder.purchaseOrderNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ],
+  };
+
+  await transport.sendMail(msg);
+};
+
 module.exports = {
   transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
   sendOnboardingEmail,
+  sendPurchaseOrderEmail,
 };

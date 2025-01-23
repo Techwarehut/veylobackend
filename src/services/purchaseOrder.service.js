@@ -122,13 +122,14 @@ const removeItemFromPurchaseOrder = async (purchaseOrderId, itemId) => {
   const purchaseOrder = await getPurchaseOrderById(purchaseOrderId);
 
   // Find and remove the item from the items array
-  const itemIndex = purchaseOrder.items.findIndex((item) => item.itemId.toString() === itemId.toString());
+  const itemIndex = purchaseOrder.items.findIndex((item) => item._id.equals(mongoose.Types.ObjectId(itemId)));
   if (itemIndex === -1) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Item not found in this purchase order');
   }
 
   // Subtract the item's price from the total before removing it
   const itemToRemove = purchaseOrder.items[itemIndex];
+
   purchaseOrder.total -= itemToRemove.price * itemToRemove.quantity;
 
   // Remove the item from the items array

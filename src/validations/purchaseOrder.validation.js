@@ -132,6 +132,12 @@ const removeJobFromPurchaseOrder = {
   }),
 };
 
+const downloadEmailPurchaseOrder = {
+  params: Joi.object().keys({
+    purchaseOrderId: Joi.string().custom(objectId).required(), // Purchase order ID
+  }),
+};
+
 module.exports = {
   createPurchaseOrder,
   getPurchaseOrders,
@@ -144,4 +150,5 @@ module.exports = {
   removeItemFromPurchaseOrder, // Validation for removing an item
   addJobToPurchaseOrder, // Validation for adding a job
   removeJobFromPurchaseOrder, // Validation for removing a job
+  downloadEmailPurchaseOrder,
 };

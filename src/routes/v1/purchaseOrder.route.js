@@ -91,4 +91,22 @@ router
     purchaseOrderController.removeJobFromPurchaseOrder
   );
 
+// Endpoint to print a purchase order
+router
+  .route('/:purchaseOrderId/download')
+  .get(
+    auth('updatePurchaseOrders'),
+    validate(purchaseOrderValidation.downloadEmailPurchaseOrder),
+    purchaseOrderController.generatePDF
+  );
+
+// Endpoint to unlink a job from a purchase order
+router
+  .route('/:purchaseOrderId/email')
+  .post(
+    auth('updatePurchaseOrders'),
+    validate(purchaseOrderValidation.downloadEmailPurchaseOrder),
+    purchaseOrderController.sendPDFToVendor
+  );
+
 module.exports = router;

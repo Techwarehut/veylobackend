@@ -2,8 +2,9 @@ const httpStatus = require('http-status');
 const pick = require('../utils/pick');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
-const { purchaseOrderService } = require('../services');
+const { purchaseOrderService, pdfService, emailService } = require('../services');
 const { PurchaseOrder } = require('../models');
+
 const mongoose = require('mongoose');
 
 // Create a new purchase order
@@ -162,23 +163,25 @@ const addItemToPurchaseOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid item details');
   }
 
+  const purchaseOrder = await purchaseOrderService.addItemToPurchaseOrder(purchaseOrderId, req.body);
+
   // Find the purchase order by ID
-  const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
+  //const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
   // Create a new purchase order item
-  const newItem = { itemName, quantity, price };
+  // const newItem = { itemName, quantity, price };
 
   // Add the new item to the items array
-  purchaseOrder.items.push(newItem);
+  // purchaseOrder.items.push(newItem);
 
   // Recalculate the total
-  purchaseOrder.total += price * quantity;
+  //purchaseOrder.total += price * quantity;
 
   // Save the updated purchase order
-  await purchaseOrder.save();
+  // await purchaseOrder.save();
 
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
@@ -195,15 +198,16 @@ const addItemToPurchaseOrder = catchAsync(async (req, res) => {
 const removeItemFromPurchaseOrder = catchAsync(async (req, res) => {
   const { purchaseOrderId, id } = req.params;
 
+  const purchaseOrder = await purchaseOrderService.removeItemFromPurchaseOrder(purchaseOrderId, id);
   // Find the purchase order by ID
-  const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
+  //const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
   // Find and remove the item from the items array
 
-  const itemIndex = purchaseOrder.items.findIndex((item) => item._id.equals(mongoose.Types.ObjectId(id)));
+  /* const itemIndex = purchaseOrder.items.findIndex((item) => item._id.equals(mongoose.Types.ObjectId(id)));
   if (itemIndex === -1) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Item not found in this purchase order');
   }
@@ -217,7 +221,7 @@ const removeItemFromPurchaseOrder = catchAsync(async (req, res) => {
 
   // Save the updated purchase order
   await purchaseOrder.save();
-
+ */
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
     { path: 'vendor', select: 'id companyName' },
@@ -234,17 +238,18 @@ const addJobToPurchaseOrder = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
   const { jobID } = req.body;
 
+  const purchaseOrder = await purchaseOrderService.addJobToPurchaseOrder(purchaseOrderId, jobID);
   // Find the purchase order by ID
-  const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
+  //const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
   // Update the jobID field in the purchase order
-  purchaseOrder.jobID = jobID;
+  // purchaseOrder.jobID = jobID;
 
   // Save the updated purchase order
-  await purchaseOrder.save();
+  //await purchaseOrder.save();
 
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
@@ -262,17 +267,18 @@ const addJobToPurchaseOrder = catchAsync(async (req, res) => {
 const removeJobFromPurchaseOrder = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
 
+  const purchaseOrder = await purchaseOrderService.removeJobFromPurchaseOrder(purchaseOrderId);
   // Find the purchase order by ID
-  const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
+  // const purchaseOrder = await PurchaseOrder.findById(purchaseOrderId);
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
   // Set the jobID to null to unlink the job
-  purchaseOrder.jobID = null;
+  //purchaseOrder.jobID = null;
 
   // Save the updated purchase order
-  await purchaseOrder.save();
+  // await purchaseOrder.save();
 
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
@@ -284,6 +290,81 @@ const removeJobFromPurchaseOrder = catchAsync(async (req, res) => {
   ]);
 
   res.send(populatedResult);
+});
+
+/**
+ * Generate a PDF for the purchase order and send it for frontend download
+ * @param {Object} req
+ * @param {Object} res
+ * @returns {Promise}
+ */
+const generatePDF = catchAsync(async (req, res) => {
+  const { purchaseOrderId } = req.params;
+
+  // Fetch the purchase order details
+  const purchaseOrder = await purchaseOrderService.getPurchaseOrderById(purchaseOrderId);
+  if (!purchaseOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
+  }
+
+  // Populate the updated purchase order with references
+  const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
+    { path: 'vendor' },
+    { path: 'requestedBy' },
+    { path: 'approvedBy' },
+    { path: 'Customer' },
+  ]);
+
+  // Generate the PDF content using the PDF service
+  const pdfBuffer = await pdfService.generatePurchaseOrderPDF(populatedResult);
+
+  // Set response headers for downloading the PDF
+  res.setHeader('Content-Disposition', `attachment; filename=purchase-order-${purchaseOrder.purchaseOrderNumber}.pdf`);
+  res.setHeader('Content-Type', 'application/pdf');
+
+  // Send the PDF buffer as the response
+  res.send(pdfBuffer);
+});
+
+/**
+ * Send the purchase order PDF to the vendor via email
+ * @param {Object} req
+ * @param {Object} res
+ * @returns {Promise}
+ */
+const sendPDFToVendor = catchAsync(async (req, res) => {
+  const { purchaseOrderId } = req.params;
+
+  // Fetch the purchase order details
+  const purchaseOrder = await purchaseOrderService.getPurchaseOrderById(purchaseOrderId);
+  if (!purchaseOrder) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
+  }
+
+  // Populate the updated purchase order with references
+  const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
+    { path: 'vendor' },
+    { path: 'requestedBy' },
+    { path: 'approvedBy' },
+    { path: 'Customer' },
+  ]);
+
+  // Check if the vendor email is available
+  const vendorEmail = populatedResult.vendor.contactPerson.email;
+  if (!vendorEmail) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Vendor email not available');
+  }
+
+  // Send the purchase order email
+  try {
+    await emailService.sendPurchaseOrderEmail(populatedResult);
+    // Respond to the client
+    res.status(httpStatus.OK).send({ message: 'Email sent successfully to the vendor.' });
+  } catch (error) {
+    // Log the error (you can use a logger here)
+    console.error('Error sending email:', error);
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send the email');
+  }
 });
 
 module.exports = {
@@ -298,4 +379,6 @@ module.exports = {
   removeItemFromPurchaseOrder, // Remove item from a purchase order
   addJobToPurchaseOrder, // Link a job to a purchase order
   removeJobFromPurchaseOrder, // Unlink a job from a purchase order
+  generatePDF,
+  sendPDFToVendor,
 };
