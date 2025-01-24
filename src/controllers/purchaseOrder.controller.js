@@ -54,14 +54,15 @@ const createPurchaseOrder = catchAsync(async (req, res) => {
 
 // Get all purchase orders with optional filters and pagination
 const getPurchaseOrders = catchAsync(async (req, res) => {
-  const filter = pick(req.query, ['vendorId', 'status', 'tenantId']);
+  const filter = pick(req.query, ['vendor', 'status', 'tenantId', 'customer', 'jobID']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   if (!options.sortBy) {
-    options.sortBy = 'createdAt'; // Default sorting by creation date
+    options.sortBy = '-createdAt'; // Default sorting by creation date
   }
 
-  //options.limit = parseInt(options.limit, 10) || 10; // Default limit to 10
-  // options.page = parseInt(options.page, 10) || 1; // Default page to 1
+  options.limit = Math.min(parseInt(options.limit, 10) || 4, 10); // Cap limit to 100
+
+  options.page = parseInt(options.page, 10) || 1; // Default page to 1
 
   const result = await purchaseOrderService.queryPurchaseOrders(filter, options);
 
@@ -76,9 +77,15 @@ const getPurchaseOrders = catchAsync(async (req, res) => {
 
   // Respond with the results
   res.send({
+    results: populatedResult,
+    totalResults: result.totalResults,
+    totalPages: result.totalPages,
+    currentPage: options.page,
+  });
+  /*  res.send({
     ...result,
     results: populatedResult,
-  });
+  }); */
 });
 
 // Get a specific purchase order by ID
@@ -171,18 +178,6 @@ const addItemToPurchaseOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
-  // Create a new purchase order item
-  // const newItem = { itemName, quantity, price };
-
-  // Add the new item to the items array
-  // purchaseOrder.items.push(newItem);
-
-  // Recalculate the total
-  //purchaseOrder.total += price * quantity;
-
-  // Save the updated purchase order
-  // await purchaseOrder.save();
-
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
     { path: 'vendor', select: 'id companyName' },
@@ -205,23 +200,6 @@ const removeItemFromPurchaseOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
-  // Find and remove the item from the items array
-
-  /* const itemIndex = purchaseOrder.items.findIndex((item) => item._id.equals(mongoose.Types.ObjectId(id)));
-  if (itemIndex === -1) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Item not found in this purchase order');
-  }
-
-  // Subtract the item cost from the total before removing
-  const itemToRemove = purchaseOrder.items[itemIndex];
-  purchaseOrder.total -= itemToRemove.price * itemToRemove.quantity;
-
-  // Remove the item from the array
-  purchaseOrder.items.splice(itemIndex, 1);
-
-  // Save the updated purchase order
-  await purchaseOrder.save();
- */
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
     { path: 'vendor', select: 'id companyName' },
@@ -245,12 +223,6 @@ const addJobToPurchaseOrder = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
 
-  // Update the jobID field in the purchase order
-  // purchaseOrder.jobID = jobID;
-
-  // Save the updated purchase order
-  //await purchaseOrder.save();
-
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
     { path: 'vendor', select: 'id companyName' },
@@ -273,12 +245,6 @@ const removeJobFromPurchaseOrder = catchAsync(async (req, res) => {
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');
   }
-
-  // Set the jobID to null to unlink the job
-  //purchaseOrder.jobID = null;
-
-  // Save the updated purchase order
-  // await purchaseOrder.save();
 
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
@@ -367,6 +333,130 @@ const sendPDFToVendor = catchAsync(async (req, res) => {
   }
 });
 
+// Function to fetch unique customers assigned to a purchase order
+const getUniqueCustomers = catchAsync(async (req, res) => {
+  const result = await PurchaseOrder.aggregate([
+    {
+      $lookup: {
+        from: 'customers', // Name of the collection where customers are stored
+        localField: 'customer', // Field in the PurchaseOrder collection that holds the ObjectId
+        foreignField: '_id', // Field in the Customer collection that holds the _id
+        as: 'customerDetails',
+      },
+    },
+    {
+      $unwind: {
+        path: '$customerDetails',
+        preserveNullAndEmptyArrays: true, // Keep entries without a customer assigned
+      },
+    },
+    {
+      $project: {
+        'customerDetails._id': 1, // Include customer ID
+        'customerDetails.businessName': 1, // Only include businessName from customer
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        customers: {
+          $addToSet: {
+            _id: { $ifNull: ['$customerDetails._id', null] }, // Use customer ID if available, null otherwise
+            businessName: { $ifNull: ['$customerDetails.businessName', 'Unassigned'] }, // Use businessName or fallback to 'Unassigned'
+          },
+        },
+      },
+    },
+  ]);
+
+  res.send({
+    customers: result[0]?.customers || [],
+  });
+});
+
+// Function to fetch unique vendors assigned to a purchase order
+const getUniqueVendors = catchAsync(async (req, res) => {
+  const result = await PurchaseOrder.aggregate([
+    {
+      $lookup: {
+        from: 'vendors', // Name of the collection where vendors are stored
+        localField: 'vendor', // Field in the PurchaseOrder collection that holds the ObjectId
+        foreignField: '_id', // Field in the Vendor collection that holds the _id
+        as: 'vendorDetails',
+      },
+    },
+    {
+      $unwind: {
+        path: '$vendorDetails',
+        preserveNullAndEmptyArrays: true, // Keep entries without a vendor assigned
+      },
+    },
+    {
+      $project: {
+        'vendorDetails._id': 1, // Include vendor ID
+        'vendorDetails.companyName': 1, // Only include companyName from vendor
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        vendors: {
+          $addToSet: {
+            _id: { $ifNull: ['$vendorDetails._id', null] }, // Use vendor ID if available, null otherwise
+            companyName: { $ifNull: ['$vendorDetails.companyName', 'Unassigned'] }, // Use companyName or fallback to 'Unassigned'
+          },
+        },
+      },
+    },
+  ]);
+
+  res.send({
+    vendors: result[0]?.vendors || [],
+  });
+});
+
+// Function to fetch unique vendors assigned to a purchase order
+const getUniqueJobs = catchAsync(async (req, res) => {
+  const result = await PurchaseOrder.aggregate([
+    {
+      $lookup: {
+        from: 'vendors', // Name of the collection where vendors are stored
+        localField: 'vendor', // Field in the PurchaseOrder collection that holds the ObjectId
+        foreignField: '_id', // Field in the Vendor collection that holds the _id
+        as: 'vendorDetails',
+      },
+    },
+    {
+      $unwind: {
+        path: '$vendorDetails',
+        preserveNullAndEmptyArrays: true, // Keep entries without a vendor assigned
+      },
+    },
+    {
+      $project: {
+        'vendorDetails.companyName': 1, // Only include companyName from vendor
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        vendors: {
+          $addToSet: {
+            $ifNull: [
+              '$vendorDetails.companyName', // Use vendor companyName if available
+              'Unassigned', // Fallback to 'Unassigned' if no vendor is assigned
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  res.send({
+    vendors: result[0]?.vendors || [],
+  });
+});
+
 module.exports = {
   createPurchaseOrder,
   getPurchaseOrders,
@@ -381,4 +471,7 @@ module.exports = {
   removeJobFromPurchaseOrder, // Unlink a job from a purchase order
   generatePDF,
   sendPDFToVendor,
+  getUniqueCustomers,
+  getUniqueVendors,
+  getUniqueJobs,
 };

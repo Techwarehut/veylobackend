@@ -109,4 +109,13 @@ router
     purchaseOrderController.sendPDFToVendor
   );
 
+// Endpoint to fetch unique customers and vendors
+router.route('/unique/customers').get(auth('getPurchaseOrders'), purchaseOrderController.getUniqueCustomers);
+
+// Endpoint to fetch unique customers and vendors
+router.route('/unique/vendors').get(auth('getPurchaseOrders'), purchaseOrderController.getUniqueVendors);
+
+// Endpoint to fetch unique customers and vendors
+router.route('/unique/jobs').get(auth('getPurchaseOrders'), purchaseOrderController.getUniqueJobs);
+
 module.exports = router;
