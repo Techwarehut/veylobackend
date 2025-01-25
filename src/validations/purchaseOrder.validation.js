@@ -31,7 +31,8 @@ const getPurchaseOrders = {
     vendor: Joi.string().custom(objectId).optional(), // Vendor ID filter
     customer: Joi.string().custom(objectId).optional(), // Vendor ID filter
     jobID: Joi.string().custom(objectId).optional(), // Vendor ID filter
-    status: Joi.string().valid('Request', 'Approved', 'Issued', 'Rejected').optional(), // Status filter
+    status: Joi.string().optional(), // Status filter
+    searchText: Joi.string().optional(), // Pagination page
     sortBy: Joi.string().optional(), // Sorting field
     limit: Joi.number().integer().optional(), // Pagination limit
     page: Joi.number().integer().optional(), // Pagination page

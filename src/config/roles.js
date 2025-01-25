@@ -1,5 +1,5 @@
 const allRoles = {
-  member: ['getUsers', 'addPurchaseOrders', 'getPurchaseOrders'],
+  member: ['getUsers', 'addPurchaseOrders', 'getPurchaseOrders', 'getVendors'],
   lead: [
     'getUsers',
     'getCustomers',

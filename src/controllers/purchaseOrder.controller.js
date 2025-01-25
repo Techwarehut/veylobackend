@@ -54,8 +54,15 @@ const createPurchaseOrder = catchAsync(async (req, res) => {
 
 // Get all purchase orders with optional filters and pagination
 const getPurchaseOrders = catchAsync(async (req, res) => {
+  const { searchText, status } = req.query;
   const filter = pick(req.query, ['vendor', 'status', 'tenantId', 'customer', 'jobID']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
+  // Assuming the logged-in user's ID is stored in req.user
+  const userId = req.user.id;
+
+  // Add filter to ensure only purchase orders requested by the user are returned
+  if (req.user.role === 'member') filter.requestedBy = userId;
+
   if (!options.sortBy) {
     options.sortBy = '-createdAt'; // Default sorting by creation date
   }
@@ -64,7 +71,26 @@ const getPurchaseOrders = catchAsync(async (req, res) => {
 
   options.page = parseInt(options.page, 10) || 1; // Default page to 1
 
+  // Handle multiple statuses (comma-separated values)
+  if (status) {
+    const statusArray = status.split(','); // Convert status string to an array
+    filter.status = { $in: statusArray }; // Use $in operator for multiple statuses
+  }
+
+  // Add search logic if searchText exists
+  if (searchText) {
+    const searchRegex = new RegExp(searchText, 'i'); // Case-insensitive regex for search
+    filter.$or = [
+      { purchaseOrderNumber: searchRegex },
+      //{ 'vendor.companyName': searchRegex },
+      // { jobID: searchRegex },
+      { 'items.itemName': searchRegex }, // Assuming `items` is an array with `itemName`
+    ];
+  }
+
   const result = await purchaseOrderService.queryPurchaseOrders(filter, options);
+
+  console.log(result.results);
 
   // Populate references (if required)
   const populatedResult = await PurchaseOrder.populate(result.results, [

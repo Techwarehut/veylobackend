@@ -77,7 +77,8 @@ const purchaseOrderSchema = mongoose.Schema(
     timestamps: true, // Automatically adds createdAt and updatedAt fields
   }
 );
-
+// Compound index for filtering by vendor, status, and sorting by createdAt
+purchaseOrderSchema.index({ vendor: 1, status: 1, createdAt: -1 });
 // Add plugins for JSON conversion and pagination
 purchaseOrderSchema.plugin(toJSON);
 purchaseOrderSchema.plugin(paginate);
