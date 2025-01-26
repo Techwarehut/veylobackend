@@ -27,7 +27,7 @@ const createPurchaseOrder = {
 
 const getPurchaseOrders = {
   query: Joi.object().keys({
-    tenantId: Joi.string().custom(objectId).required(), // Tenant ID filter
+    //tenantId: Joi.string().custom(objectId).required(), // Tenant ID filter
     vendor: Joi.string().custom(objectId).optional(), // Vendor ID filter
     customer: Joi.string().custom(objectId).optional(), // Vendor ID filter
     jobID: Joi.string().custom(objectId).optional(), // Vendor ID filter
@@ -67,7 +67,7 @@ const updatePurchaseOrder = {
       requestedBy: Joi.string().custom(objectId).optional(),
       approvedBy: Joi.string().custom(objectId).allow(null).optional(),
       customer: Joi.string().custom(objectId).optional(),
-      tenantId: Joi.string().custom(objectId).optional(),
+      // tenantId: Joi.string().custom(objectId).optional(),
     })
     .min(1), // Ensure at least one field is updated
 };
@@ -86,7 +86,7 @@ const updateStatus = {
     status: Joi.string()
       .valid('Request', 'Approved', 'Issued', 'Rejected') // Status must be one of the allowed values
       .required(),
-    userId: Joi.string().custom(objectId).required(), // User ID is required
+    //userId: Joi.string().custom(objectId).required(), // User ID is required
   }),
 };
 

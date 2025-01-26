@@ -19,7 +19,7 @@ const createUser = {
 
 const getUsers = {
   query: Joi.object().keys({
-    tenantId: Joi.string().optional(), // Add tenantId as a required string
+    // tenantId: Joi.string().optional(), // Add tenantId as a required string
     name: Joi.string(),
     role: Joi.string(),
     sortBy: Joi.string(),

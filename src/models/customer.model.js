@@ -118,11 +118,11 @@ const customerSchema = mongoose.Schema(
     website: {
       type: String,
       default: '',
-      validate(value) {
-        if (value && !validator.isURL(value, { require_protocol: true })) {
+      /* validate(value) {
+        if (value && !validator.isURL(value, { require_protocol: false })) {
           throw new Error('Invalid URL');
         }
-      },
+      }, */
     },
     billingAddress: billingAddressSchema,
     siteLocations: [siteLocationSchema],

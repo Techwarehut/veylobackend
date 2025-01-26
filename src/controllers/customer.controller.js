@@ -6,7 +6,7 @@ const { customerService, emailService } = require('../services');
 
 // Create a new customer
 const createCustomer = catchAsync(async (req, res) => {
-  const tenantId = req.query.tenantId;
+  const tenantId = req.user.tenantID;
 
   if (!tenantId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tenant ID is required');
@@ -21,9 +21,9 @@ const createCustomer = catchAsync(async (req, res) => {
 // Get all customers with optional filters and pagination
 const getCustomers = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['customerName', 'businessName', 'isActive']);
-  if (req.query.tenantId) {
-    filter.tenantId = req.query.tenantId;
-  }
+  //if (req.query.tenantID) {
+  filter.tenantId = req.user.tenantID;
+  // }
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   if (!options.sortBy) {

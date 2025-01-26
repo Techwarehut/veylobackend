@@ -28,7 +28,8 @@ const auth =
       passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
     })
       .then(() => {
-        return tenantIdCheck(req, res, next);
+        //return tenantIdCheck(req, res, next);
+        next();
       })
       .catch((err) => next(err));
   };

@@ -6,7 +6,7 @@ const { vendorService } = require('../services');
 
 // Create a new vendor
 const createVendor = catchAsync(async (req, res) => {
-  const tenantId = req.query.tenantId;
+  const tenantId = req.user.tenantID;
 
   if (!tenantId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tenant ID is required');
@@ -21,9 +21,8 @@ const createVendor = catchAsync(async (req, res) => {
 // Get all vendors with optional filters and pagination
 const getVendors = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['companyName', 'isActive']);
-  if (req.query.tenantId) {
-    filter.tenantId = req.query.tenantId;
-  }
+
+  filter.tenantId = req.user.tenantID;
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   if (!options.sortBy) {

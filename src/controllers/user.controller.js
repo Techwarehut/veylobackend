@@ -21,7 +21,7 @@ const generateComplexPassword = () => {
 const createUser = catchAsync(async (req, res) => {
   // Get tenantId from query parameters
 
-  const tenantId = req.query.tenantId;
+  const tenantId = req.user.tenantID;
 
   // Ensure tenantId exists
   if (!tenantId) {
@@ -36,8 +36,6 @@ const createUser = catchAsync(async (req, res) => {
   const userData = { ...req.body, tenantID: tenantId, password: password };
   const user = await userService.createUser(userData);
 
-  console.log(password, user.password);
-
   await emailService.sendOnboardingEmail(user.email, user.name, password);
 
   res.status(httpStatus.CREATED).send(user);
@@ -47,9 +45,9 @@ const getUsers = catchAsync(async (req, res) => {
   const filter = pick(req.query, ['name', 'role']);
 
   // Add tenant-specific filtering based on query params
-  if (req.query.tenantId) {
-    filter.tenantID = req.query.tenantId; // Filter users by tenantId
-  }
+
+  filter.tenantID = req.user.tenantID; // Filter users by tenantId
+
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   if (!options.sortBy) {
     options.sortBy = 'name'; // Default to sorting by name

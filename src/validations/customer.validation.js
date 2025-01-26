@@ -7,7 +7,7 @@ const createCustomer = {
     businessName: Joi.string().required(), // Business name is required
     email: Joi.string().email().required(), // Email is required and must be valid
     phone: Joi.string().allow('', null).optional(), // Phone is optional
-    website: Joi.string().uri().allow('', null).optional(), // Website URL is optional
+    website: Joi.string().allow('', null).optional(), // Website URL is optional
     billingAddress: Joi.object()
       .keys({
         AddressLine: Joi.string().allow('', null).optional(),
@@ -35,7 +35,7 @@ const createCustomer = {
 
 const getCustomers = {
   query: Joi.object().keys({
-    tenantId: Joi.string().custom(objectId).optional(), // Tenant ID is optional
+    // tenantId: Joi.string().custom(objectId).optional(), // Tenant ID is optional
     customerName: Joi.string().optional(), // Filter by customer name
     businessName: Joi.string().optional(), // Filter by business name
     isActive: Joi.boolean().optional(), // Filter by active status
@@ -61,7 +61,7 @@ const updateCustomer = {
       businessName: Joi.string().optional(), // Business name is optional
       email: Joi.string().email().optional(), // Email must be valid if provided
       phone: Joi.string().allow('', null).optional(), // Phone can be empty or null
-      website: Joi.string().uri().allow('', null).optional(), // Website URL is optional
+      website: Joi.string().allow('', null).optional(), // Website URL is optional
       billingAddress: Joi.object()
         .keys({
           AddressLine: Joi.string().allow('', null).optional(),

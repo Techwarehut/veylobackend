@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 
 // Create a new purchase order
 const createPurchaseOrder = catchAsync(async (req, res) => {
-  const tenantId = req.query.tenantId;
+  const tenantId = req.user.tenantID;
 
   if (!tenantId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tenant ID is required');
@@ -36,6 +36,7 @@ const createPurchaseOrder = catchAsync(async (req, res) => {
     ...req.body,
     tenantId,
     purchaseOrderNumber: newPurchaseOrderNumber,
+    requestedBy: req.user.id,
   };
 
   // Step 4: Create the purchase order
@@ -55,10 +56,11 @@ const createPurchaseOrder = catchAsync(async (req, res) => {
 // Get all purchase orders with optional filters and pagination
 const getPurchaseOrders = catchAsync(async (req, res) => {
   const { searchText, status } = req.query;
-  const filter = pick(req.query, ['vendor', 'status', 'tenantId', 'customer', 'jobID']);
+  const filter = pick(req.query, ['vendor', 'status', 'customer', 'jobID']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // Assuming the logged-in user's ID is stored in req.user
   const userId = req.user.id;
+  filter.tenantId = req.user.tenantID;
 
   // Add filter to ensure only purchase orders requested by the user are returned
   if (req.user.role === 'member') filter.requestedBy = userId;
@@ -89,8 +91,6 @@ const getPurchaseOrders = catchAsync(async (req, res) => {
   }
 
   const result = await purchaseOrderService.queryPurchaseOrders(filter, options);
-
-  console.log(result.results);
 
   // Populate references (if required)
   const populatedResult = await PurchaseOrder.populate(result.results, [
@@ -148,7 +148,8 @@ const deletePurchaseOrder = catchAsync(async (req, res) => {
 // Update the status of a purchase order
 const updateStatus = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
-  const { status, userId } = req.body;
+  const { status } = req.body;
+  const userId = req.user.id;
 
   const purchaseOrder = await purchaseOrderService.updatePurchaseOrderStatus(purchaseOrderId, status, userId);
 
@@ -359,14 +360,25 @@ const sendPDFToVendor = catchAsync(async (req, res) => {
   }
 });
 
-// Function to fetch unique customers assigned to a purchase order
 const getUniqueCustomers = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantID;
   const result = await PurchaseOrder.aggregate([
     {
       $lookup: {
         from: 'customers', // Name of the collection where customers are stored
-        localField: 'customer', // Field in the PurchaseOrder collection that holds the ObjectId
-        foreignField: '_id', // Field in the Customer collection that holds the _id
+        let: { customerId: '$customer' }, // Pass the customer ObjectId from PurchaseOrder
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$_id', '$$customerId'] }, // Match on customer ID
+                  { $eq: ['$tenantId', tenantId] }, // Match on tenantId
+                ],
+              },
+            },
+          },
+        ],
         as: 'customerDetails',
       },
     },
@@ -400,14 +412,25 @@ const getUniqueCustomers = catchAsync(async (req, res) => {
   });
 });
 
-// Function to fetch unique vendors assigned to a purchase order
 const getUniqueVendors = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantID;
   const result = await PurchaseOrder.aggregate([
     {
       $lookup: {
         from: 'vendors', // Name of the collection where vendors are stored
-        localField: 'vendor', // Field in the PurchaseOrder collection that holds the ObjectId
-        foreignField: '_id', // Field in the Vendor collection that holds the _id
+        let: { vendorId: '$vendor' }, // Pass the vendor ObjectId from PurchaseOrder
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$_id', '$$vendorId'] }, // Match on vendor ID
+                  { $eq: ['$tenantId', tenantId] }, // Match on tenantId
+                ],
+              },
+            },
+          },
+        ],
         as: 'vendorDetails',
       },
     },
@@ -441,14 +464,25 @@ const getUniqueVendors = catchAsync(async (req, res) => {
   });
 });
 
-// Function to fetch unique vendors assigned to a purchase order
 const getUniqueJobs = catchAsync(async (req, res) => {
+  const tenantId = req.user.tenantID;
   const result = await PurchaseOrder.aggregate([
     {
       $lookup: {
         from: 'vendors', // Name of the collection where vendors are stored
-        localField: 'vendor', // Field in the PurchaseOrder collection that holds the ObjectId
-        foreignField: '_id', // Field in the Vendor collection that holds the _id
+        let: { vendorId: '$vendor' }, // Pass the vendor ObjectId from PurchaseOrder
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$_id', '$$vendorId'] }, // Match on vendor ID
+                  { $eq: ['$tenantId', tenantId] }, // Match on tenantId
+                ],
+              },
+            },
+          },
+        ],
         as: 'vendorDetails',
       },
     },

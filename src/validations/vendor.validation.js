@@ -26,7 +26,7 @@ const createVendor = {
 
 const getVendors = {
   query: Joi.object().keys({
-    tenantId: Joi.string().custom(objectId).optional(), // Tenant ID is optional
+    // tenantId: Joi.string().custom(objectId).optional(), // Tenant ID is optional
     companyName: Joi.string().optional(), // Filter by company name
     isActive: Joi.boolean().optional(), // Filter by active status
     sortBy: Joi.string().optional(), // Sorting field
