@@ -98,6 +98,21 @@ const deleteTenantById = async (tenantId) => {
   return tenant;
 };
 
+const updateTenantLogo = async (tenantId, logoUrl) => {
+  try {
+    const tenant = await Tenant.findById(tenantId);
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    tenant.businessLogo = logoUrl;
+    await tenant.save();
+    return tenant;
+  } catch (error) {
+    throw new Error('Error updating tenant logo');
+  }
+};
+
 module.exports = {
   createTenant,
   queryTenants,
@@ -105,4 +120,5 @@ module.exports = {
   getTenantByBusinessName,
   updateTenantById,
   deleteTenantById,
+  updateTenantLogo,
 };

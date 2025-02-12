@@ -3,3 +3,4 @@ module.exports.userValidation = require('./user.validation');
 module.exports.customerValidation = require('./customer.validation');
 module.exports.vendorValidation = require('./vendor.validation');
 module.exports.purchaseOrderValidation = require('./purchaseOrder.validation');
+module.exports.tenantValidation = require('./tenant.validation');
