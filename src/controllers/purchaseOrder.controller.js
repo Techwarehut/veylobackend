@@ -306,6 +306,7 @@ const generatePDF = catchAsync(async (req, res) => {
     { path: 'requestedBy' },
     { path: 'approvedBy' },
     { path: 'Customer' },
+    { path: 'tenantId' },
   ]);
 
   // Generate the PDF content using the PDF service

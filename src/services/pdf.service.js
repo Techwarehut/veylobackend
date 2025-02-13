@@ -41,6 +41,104 @@ const generatePDF = async (generateContent) => {
     }
   });
 };
+
+/**
+ * Generate a standard PDF header using tenant information
+ * @param {Object} doc - PDF document instance
+ * @param {Object} entity - The entity data (purchase order, invoice, etc.)
+ * @param {string} title - The document title (e.g., "Purchase Order", "Invoice")
+ */
+const generatePDFHeader = (doc, entity, title) => {
+  // Business Details
+  const tenant = entity.tenantId;
+  // Save current position
+  const startX = doc.x;
+  const startY = doc.y - 10;
+
+  /* doc.fontSize(24).text(title, { align: 'center' });
+  doc.moveDown(); */
+
+  if (tenant) {
+    // Convert relative businessLogo path to an absolute path
+
+    const logoPath = path.resolve(__dirname, '..', tenant.businessLogo);
+
+    // Place logo on the left
+    try {
+      // Fit the image in the dimensions, and center it both horizontally and vertically
+      doc.image(logoPath, startX, startY, { fit: [50, 50], align: 'center', valign: 'center' });
+
+      //doc.image(logoPath, startX, startY, { width: 60, height: 60 });
+    } catch (error) {
+      console.error('Error loading logo:', error.message);
+    }
+
+    // Move to the right for title, keeping it justified between
+    doc.x = startX + 100; // Adjust spacing as needed
+    doc.fontSize(24).text(title, { align: 'right' });
+    // doc.image(logoPath, { width: 60, height: 60 }).moveDown();
+
+    // Reset x position for next content
+    doc.x = startX;
+    doc.moveDown(0.5); // Reduce space after header
+
+    // Draw a line to separate header
+    doc.moveTo(startX, doc.y).lineTo(550, doc.y).stroke();
+
+    doc.moveDown(1); // Small spacing after line
+
+    doc.fontSize(14).text(tenant.businessName, { bold: true });
+
+    // Check if businessBillingAddress exists and has valid fields
+    if (tenant.businessBillingAddress) {
+      const { addressLine, city, province, zipCode, country } = tenant.businessBillingAddress;
+      let addressParts = [];
+
+      if (addressLine?.trim()) doc.fontSize(10).text(addressLine);
+      if (city?.trim()) addressParts.push(city);
+      if (province?.trim()) addressParts.push(province);
+      if (zipCode?.trim()) addressParts.push(zipCode);
+      //if (country?.trim()) addressParts.push(country);
+
+      if (addressParts.length > 0) {
+        doc.fontSize(10).text(addressParts.join(', '));
+      }
+    }
+
+    if (tenant.businessPhone) {
+      doc.text(tenant.businessPhone);
+    }
+
+    if (tenant.businessEmail) {
+      doc.text(tenant.businessEmail);
+    }
+
+    if (tenant.businessWebsite) {
+      doc.text(tenant.businessWebsite);
+    }
+
+    /*  if (tenant.businessTaxID) {
+      doc.text(`Tax ID: ${tenant.businessTaxID}`);
+    } */
+
+    doc.moveDown();
+  }
+
+  // Document Specific Details
+  /* doc.fontSize(12).text(`ID: ${entity.purchaseOrderNumber}`);
+  doc.text(`Date: ${entity.createdAt}`); */
+
+  /* if (entity.vendor) {
+    doc.text(`Vendor: ${entity.vendor.companyName}`);
+  }
+
+  if (entity.customer) {
+    doc.text(`Customer: ${entity.customer.name}`);
+  }
+ */
+  doc.moveDown();
+};
+
 /**
  * Generate a Purchase Order PDF
  * @param {Object} purchaseOrder - The purchase order data
@@ -48,26 +146,64 @@ const generatePDF = async (generateContent) => {
  */
 const generatePurchaseOrderPDF = async (purchaseOrder) => {
   return generatePDF((doc) => {
-    doc.fontSize(18).text('Purchase Order', { align: 'center' });
-    doc.moveDown();
+    //console.log(purchaseOrder);
+    generatePDFHeader(doc, purchaseOrder, 'Purchase Order');
 
-    doc.fontSize(12).text(`Order ID: ${purchaseOrder.id}`);
+    /*  doc.fontSize(18).text('Purchase Order', { align: 'center' });
+    doc.moveDown();
+ */
+    doc.fontSize(12).text(`Order ID: ${purchaseOrder.purchaseOrderNumber}`);
     doc.text(`Date: ${purchaseOrder.date}`);
-    doc.text(`Vendor: ${purchaseOrder.vendor.name}`);
+    doc.text(`Vendor: ${purchaseOrder.vendor.companyName}`);
     // doc.text(`Customer: ${purchaseOrder.customer.name}`);
     doc.moveDown();
 
     doc.text('Items:');
+    // Define table column positions
+    const tableTop = doc.y + 10; // Start below header
+    const columnWidths = [50, 200, 80, 80, 100]; // Column widths: Index, Name, Quantity, Price, Total
+
+    // Table Header
+    doc.fontSize(12).text('No.', 50, tableTop, { bold: true });
+    doc.text('Item Name', 100, tableTop, { bold: true });
+    doc.text('Qty', 300, tableTop, { bold: true });
+    doc.text('Price', 380, tableTop, { bold: true });
+    doc.text('Total', 460, tableTop, { bold: true });
+
+    // Draw line under header
+    doc
+      .moveTo(50, tableTop + 15)
+      .lineTo(550, tableTop + 15)
+      .stroke();
+
+    // Table Rows
+    let yPos = tableTop + 25;
     purchaseOrder.items.forEach((item, index) => {
+      doc.text(`${index + 1}`, 50, yPos);
+      doc.text(item.itemName, 100, yPos);
+      doc.text(item.quantity.toString(), 300, yPos);
+      doc.text(`$${item.price.toFixed(2)}`, 380, yPos);
+      doc.text(`$${(item.quantity * item.price).toFixed(2)}`, 460, yPos);
+      yPos += 20; // Move to the next row
+    });
+
+    // Draw Total Row
+    doc
+      .moveTo(50, yPos + 5)
+      .lineTo(550, yPos + 5)
+      .stroke(); // Line above total
+    doc.fontSize(12).text(`Total: $${purchaseOrder.total.toFixed(2)}`, 460, yPos + 10, { bold: true });
+
+    /*  purchaseOrder.items.forEach((item, index) => {
       doc.text(
-        `${index + 1}. ${item.name} - ${item.quantity} x $${item.price.toFixed(2)} = $${(item.quantity * item.price).toFixed(
-          2
-        )}`
+        `${index + 1}. ${item.itemName} - ${item.quantity} x $${item.price.toFixed(2)} = $${(
+          item.quantity * item.price
+        ).toFixed(2)}`
       );
     });
 
     doc.moveDown();
-    doc.text(`Total: $${purchaseOrder.total.toFixed(2)}`, { align: 'right' });
+    doc.text(`Total: $${purchaseOrder.total.toFixed(2)}`, { align: 'right' }); */
   });
 };
 
@@ -78,7 +214,7 @@ const generatePurchaseOrderPDF = async (purchaseOrder) => {
  * @returns {Promise<string>}
  */
 const generateInvoicePDF = async (invoice, outputPath) => {
-  return generatePDF(outputPath, (doc) => {
+  return generatePDF((doc) => {
     doc.fontSize(18).text('Invoice', { align: 'center' });
     doc.moveDown();
 
@@ -109,7 +245,7 @@ const generateInvoicePDF = async (invoice, outputPath) => {
  * @returns {Promise<string>}
  */
 const generateEstimatePDF = async (estimate, outputPath) => {
-  return generatePDF(outputPath, (doc) => {
+  return generatePDF((doc) => {
     doc.fontSize(18).text('Estimate', { align: 'center' });
     doc.moveDown();
 
@@ -139,7 +275,7 @@ const generateEstimatePDF = async (estimate, outputPath) => {
  * @returns {Promise<string>}
  */
 const generateJobOrderPDF = async (jobOrder, outputPath) => {
-  return generatePDF(outputPath, (doc) => {
+  return generatePDF((doc) => {
     doc.fontSize(18).text('Job Order', { align: 'center' });
     doc.moveDown();
 
