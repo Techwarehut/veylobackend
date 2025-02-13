@@ -3,6 +3,7 @@ const auth = require('../../middlewares/auth');
 const validate = require('../../middlewares/validate');
 const tenantValidation = require('../../validations/tenant.validation');
 const tenantController = require('../../controllers/tenant.controller');
+const upload = require('../../middlewares/storage');
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ router
   .patch(auth('manageTenant'), validate(tenantValidation.updateTenant), tenantController.updateTenant);
 
 // Upload business logo
-router.route('/upload').post(auth('manageTenant'), tenantController.uploadBusinessLogo);
+router.route('/upload').post(auth('manageTenant'), upload.single('businessLogo'), tenantController.uploadBusinessLogo);
 
 // Delete business logo
 router.route('/deleteLogo').patch(auth('manageTenant'), tenantController.deleteLogo);

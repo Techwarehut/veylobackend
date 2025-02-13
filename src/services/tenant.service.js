@@ -104,9 +104,10 @@ const updateTenantLogo = async (tenantId, logoUrl) => {
     if (!tenant) {
       throw new Error('Tenant not found');
     }
-
+    console.log('Before Save', tenant.businessLogo);
     tenant.businessLogo = logoUrl;
     await tenant.save();
+    console.log('After Save', tenant.businessLogo);
     return tenant;
   } catch (error) {
     throw new Error('Error updating tenant logo');

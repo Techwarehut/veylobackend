@@ -1,20 +1,30 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 //const multerS3 = require('multer-s3');
 //const S3Client = require('@aws-sdk/client-s3');
 
-const config = require('./config');
+const config = require('../config/config');
 
 let storage;
 
 if (config.env === 'development') {
   // Local storage for development
+
   storage = multer.diskStorage({
     destination: (req, file, cb) => {
       // Get the tenantId from the request user (assuming it's in req.user.tenantID)
-      const tenantId = req.user.tenantID;
+      const tenantId = req.user.tenantID.toString();
+
+      console.log('Tenant ID:', tenantId, 'Type:', typeof tenantId);
+
+      if (!tenantId) {
+        return cb(new Error('Tenant ID is missing'), null);
+      }
+      console.log('directory', __dirname);
       // Create a folder for the tenant if it doesn't exist
       const uploadDir = path.join(__dirname, '..', 'uploads', tenantId);
+      console.log('directory', uploadDir);
 
       // Ensure that the directory exists or create it
       if (!fs.existsSync(uploadDir)) {
@@ -31,6 +41,7 @@ if (config.env === 'development') {
     },
   });
 } else {
+  console.log('I am not in dev');
   // Cloud storage for production (DigitalOcean Spaces - S3 compatible)
   const s3 = new S3Client({
     region: process.env.DIGITALOCEAN_REGION,
@@ -56,6 +67,4 @@ if (config.env === 'development') {
 
 const upload = multer({ storage });
 
-module.exports = {
-  upload,
-};
+module.exports = upload;
