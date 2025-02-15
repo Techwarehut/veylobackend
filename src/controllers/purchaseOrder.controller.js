@@ -303,9 +303,9 @@ const generatePDF = catchAsync(async (req, res) => {
   // Populate the updated purchase order with references
   const populatedResult = await PurchaseOrder.populate(purchaseOrder, [
     { path: 'vendor' },
-    { path: 'requestedBy' },
+    /*  { path: 'requestedBy' },
     { path: 'approvedBy' },
-    { path: 'Customer' },
+    { path: 'Customer' }, */
     { path: 'tenantId' },
   ]);
 

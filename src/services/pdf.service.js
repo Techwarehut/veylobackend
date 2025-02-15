@@ -3,20 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('../config/logger');
 
-/**
- * Generate a PDF
- * @param {function} generateContent - Function that generates content for the PDF
- * @returns {Promise<string>} - Returns the path of the generated PDF
- */
-/**
- * Generate a PDF in-memory
- * @param {Function} generateContent - A function to generate the content of the PDF, receiving the PDFDocument instance as an argument
- * @returns {Promise<Buffer>} - A Promise that resolves with the generated PDF as a Buffer
- */
 const generatePDF = async (generateContent) => {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument();
+      const doc = new PDFDocument({ size: 'A4', margin: 50 }); // Standard A4 size
       const buffers = [];
 
       // Collect chunks of data as the PDF is generated
@@ -43,167 +33,238 @@ const generatePDF = async (generateContent) => {
 };
 
 /**
- * Generate a standard PDF header using tenant information
- * @param {Object} doc - PDF document instance
- * @param {Object} entity - The entity data (purchase order, invoice, etc.)
- * @param {string} title - The document title (e.g., "Purchase Order", "Invoice")
+ * Generate PDF Header
  */
 const generatePDFHeader = (doc, entity, title) => {
-  // Business Details
   const tenant = entity.tenantId;
-  // Save current position
-  const startX = doc.x;
-  const startY = doc.y - 10;
+  if (!tenant) return;
 
-  /* doc.fontSize(24).text(title, { align: 'center' });
-  doc.moveDown(); */
+  const startX = 50;
+  let y = 50;
 
-  if (tenant) {
-    // Convert relative businessLogo path to an absolute path
-
+  // Business Logo
+  if (tenant.businessLogo) {
     const logoPath = path.resolve(__dirname, '..', tenant.businessLogo);
-
-    // Place logo on the left
     try {
-      // Fit the image in the dimensions, and center it both horizontally and vertically
-      doc.image(logoPath, startX, startY, { fit: [50, 50], align: 'center', valign: 'center' });
-
-      //doc.image(logoPath, startX, startY, { width: 60, height: 60 });
+      doc.image(logoPath, startX, y, { height: 40, align: 'center', valign: 'center' });
     } catch (error) {
       console.error('Error loading logo:', error.message);
     }
-
-    // Move to the right for title, keeping it justified between
-    doc.x = startX + 100; // Adjust spacing as needed
-    doc.fontSize(24).text(title, { align: 'right' });
-    // doc.image(logoPath, { width: 60, height: 60 }).moveDown();
-
-    // Reset x position for next content
-    doc.x = startX;
-    doc.moveDown(0.5); // Reduce space after header
-
-    // Draw a line to separate header
-    doc.moveTo(startX, doc.y).lineTo(550, doc.y).stroke();
-
-    doc.moveDown(1); // Small spacing after line
-
-    doc.fontSize(14).text(tenant.businessName, { bold: true });
-
-    // Check if businessBillingAddress exists and has valid fields
-    if (tenant.businessBillingAddress) {
-      const { addressLine, city, province, zipCode, country } = tenant.businessBillingAddress;
-      let addressParts = [];
-
-      if (addressLine?.trim()) doc.fontSize(10).text(addressLine);
-      if (city?.trim()) addressParts.push(city);
-      if (province?.trim()) addressParts.push(province);
-      if (zipCode?.trim()) addressParts.push(zipCode);
-      //if (country?.trim()) addressParts.push(country);
-
-      if (addressParts.length > 0) {
-        doc.fontSize(10).text(addressParts.join(', '));
-      }
-    }
-
-    if (tenant.businessPhone) {
-      doc.text(tenant.businessPhone);
-    }
-
-    if (tenant.businessEmail) {
-      doc.text(tenant.businessEmail);
-    }
-
-    if (tenant.businessWebsite) {
-      doc.text(tenant.businessWebsite);
-    }
-
-    /*  if (tenant.businessTaxID) {
-      doc.text(`Tax ID: ${tenant.businessTaxID}`);
-    } */
-
-    doc.moveDown();
   }
 
-  // Document Specific Details
-  /* doc.fontSize(12).text(`ID: ${entity.purchaseOrderNumber}`);
-  doc.text(`Date: ${entity.createdAt}`); */
+  // Business Name & Address
 
-  /* if (entity.vendor) {
-    doc.text(`Vendor: ${entity.vendor.companyName}`);
+  doc.fontSize(14).text(tenant.businessName, startX + 60, y, { bold: true });
+  y += 15;
+  // Check if businessBillingAddress exists and has valid fields
+  if (tenant.businessBillingAddress) {
+    const { addressLine, city, province, zipCode, country } = tenant.businessBillingAddress;
+    let addressParts = [];
+
+    if (addressLine?.trim()) {
+      doc.fontSize(10).text(addressLine);
+      y += 15;
+    }
+
+    if (city?.trim()) addressParts.push(city);
+    if (province?.trim()) addressParts.push(province);
+    if (zipCode?.trim()) addressParts.push(zipCode);
+    //if (country?.trim()) addressParts.push(country);
+
+    if (addressParts.length > 0) {
+      doc.fontSize(10).text(addressParts.join(', '), startX + 60, y);
+      y += 15;
+    }
   }
 
-  if (entity.customer) {
-    doc.text(`Customer: ${entity.customer.name}`);
-  }
- */
-  doc.moveDown();
+  // Title (Aligned Right)
+  doc.fontSize(20).text(title, 400, 50, { align: 'right', bold: true });
+
+  // Draw separator line
+  doc
+    .moveTo(startX, y + 10)
+    .lineTo(550, y + 10)
+    .stroke();
+  doc.moveDown(2);
 };
 
 /**
- * Generate a Purchase Order PDF
- * @param {Object} purchaseOrder - The purchase order data
- * @returns {Promise<string>}
+ * Generate Footer (Manually on each page)
+ */
+const generatePDFFooter = (doc, entity) => {
+  const tenant = entity.tenantId;
+  if (!tenant) return;
+
+  const pageHeight = doc.page.height;
+  const footerY = pageHeight - 70; // Fixed position from the bottom
+
+  // Separator line
+  doc
+    .moveTo(50, footerY - 10)
+    .lineTo(550, footerY - 10)
+    .stroke();
+
+  // Footer Text
+  /*   const pageWidth = doc.page.width;
+
+  const margin = 50; */
+  //const columnWidth = (pageWidth - 2 * margin) / 3;
+
+  doc.fontSize(10);
+  doc.text(tenant.businessPhone || tenant.businessEmail || '', 50, footerY, {
+    /* width: columnWidth, */ align: 'left' /* continued: true */,
+  });
+  doc.text(tenant.businessWebsite || '', 400, footerY, {
+    /*  width: columnWidth, */
+    align: 'right',
+    /* continued: true, */
+  });
+  // doc.text(tenant.businessEmail || '', margin + 2 * 60, footerY, { width: columnWidth, align: 'right' });
+};
+
+/**
+ * Generate Purchase Order PDF
  */
 const generatePurchaseOrderPDF = async (purchaseOrder) => {
   return generatePDF((doc) => {
-    //console.log(purchaseOrder);
+    const currency = purchaseOrder.tenantId.currency;
+
     generatePDFHeader(doc, purchaseOrder, 'Purchase Order');
 
-    /*  doc.fontSize(18).text('Purchase Order', { align: 'center' });
-    doc.moveDown();
- */
-    doc.fontSize(12).text(`Order ID: ${purchaseOrder.purchaseOrderNumber}`);
-    doc.text(`Date: ${purchaseOrder.date}`);
-    doc.text(`Vendor: ${purchaseOrder.vendor.companyName}`);
-    // doc.text(`Customer: ${purchaseOrder.customer.name}`);
-    doc.moveDown();
+    let headYpos = doc.y;
+    doc.fontSize(12).text(`Order ID:`, 400, headYpos, {
+      align: 'left',
+    });
+    doc.fontSize(12).text(`PO-${purchaseOrder.purchaseOrderNumber}`, 460, headYpos, {
+      align: 'left',
+    });
+    const formattedDate = purchaseOrder.createdAt.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+    });
+    doc.text(`Date:`, 400, headYpos + 20, { align: 'left' });
+    doc.text(`${formattedDate}`, 460, headYpos + 20, { align: 'left' });
 
-    doc.text('Items:');
-    // Define table column positions
-    const tableTop = doc.y + 10; // Start below header
-    const columnWidths = [50, 200, 80, 80, 100]; // Column widths: Index, Name, Quantity, Price, Total
+    doc.moveDown(2);
+
+    let linePos = doc.y;
+    const xPos = 300;
+    doc.fontSize(12).text('VENDOR INFO', 50, linePos, { bold: true, align: 'left', underline: true });
+    doc.fontSize(12).text('SHIP TO', xPos, linePos, { bold: true, align: 'left', underline: true });
+    doc.moveDown(0.5);
+    linePos = doc.y;
+    doc.fontSize(10).text(`${purchaseOrder.vendor.companyName}`, 50, linePos, { bold: true, align: 'left' });
+    doc.fontSize(10).text(`${purchaseOrder.tenantId.businessName}`, xPos, linePos, { bold: true, align: 'left' });
+
+    linePos = doc.y;
+    doc.fontSize(10).text(`${purchaseOrder.vendor.address.AddressLine || ''}`, 50, linePos, { bold: true, align: 'left' });
+    doc.fontSize(10).text(`${purchaseOrder.tenantId.businessBillingAddress.addressLine || ''}`, xPos, linePos, {
+      bold: true,
+      align: 'left',
+    });
+
+    linePos = doc.y;
+    doc
+      .fontSize(10)
+      .text(
+        `${purchaseOrder.vendor.address.City || ''}, ${purchaseOrder.vendor.address.Province || ''}, ${
+          purchaseOrder.vendor.address.zipcode || ''
+        }`,
+        50,
+        linePos,
+        {
+          bold: true,
+          align: 'left',
+        }
+      );
+    doc
+      .fontSize(10)
+      .text(
+        `${purchaseOrder.tenantId.businessBillingAddress.city || ''}, ${
+          purchaseOrder.tenantId.businessBillingAddress.province || ''
+        }, ${purchaseOrder.tenantId.businessBillingAddress.zipCode || ''}`,
+        xPos,
+        linePos,
+        { bold: true, align: 'left' }
+      );
+
+    doc.moveDown(2);
+    doc.fontSize(12).text('ITEMS', 50, doc.y, { bold: true, align: 'left', underline: true });
+    doc.moveDown(0.5);
+
+    // Table Configuration
+    const tableTop = doc.y + 10;
+    const pageHeight = doc.page.height;
+    const footerMargin = 80;
+    let yPos = tableTop + 25;
 
     // Table Header
-    doc.fontSize(12).text('No.', 50, tableTop, { bold: true });
+    doc.font('Helvetica-Bold').fontSize(12).text('No.', 50, tableTop, { bold: true });
     doc.text('Item Name', 100, tableTop, { bold: true });
     doc.text('Qty', 300, tableTop, { bold: true });
-    doc.text('Price', 380, tableTop, { bold: true });
+    doc.text('Unit Price', 380, tableTop, { bold: true });
     doc.text('Total', 460, tableTop, { bold: true });
 
-    // Draw line under header
     doc
       .moveTo(50, tableTop + 15)
       .lineTo(550, tableTop + 15)
       .stroke();
 
-    // Table Rows
-    let yPos = tableTop + 25;
+    // Table Rows with Manual Page Breaks
     purchaseOrder.items.forEach((item, index) => {
-      doc.text(`${index + 1}`, 50, yPos);
+      if (yPos + 20 > pageHeight - footerMargin) {
+        generatePDFFooter(doc, purchaseOrder); // Add footer before new page
+        doc.addPage();
+        generatePDFHeader(doc, purchaseOrder, 'Purchase Order');
+        yPos = doc.y + 10;
+      }
+
+      doc.font('Helvetica').text(`${index + 1}`, 50, yPos);
       doc.text(item.itemName, 100, yPos);
       doc.text(item.quantity.toString(), 300, yPos);
-      doc.text(`$${item.price.toFixed(2)}`, 380, yPos);
-      doc.text(`$${(item.quantity * item.price).toFixed(2)}`, 460, yPos);
-      yPos += 20; // Move to the next row
+      doc.text(`${currency}${item.price.toFixed(2)}`, 380, yPos);
+      doc.text(`${currency}${(item.quantity * item.price).toFixed(2)}`, 460, yPos);
+      yPos += 20;
     });
 
     // Draw Total Row
+    if (yPos + 30 > pageHeight - footerMargin) {
+      generatePDFFooter(doc, purchaseOrder);
+      doc.addPage();
+      generatePDFHeader(doc, purchaseOrder, 'Purchase Order');
+      yPos = doc.y + 10;
+    }
+
     doc
       .moveTo(50, yPos + 5)
       .lineTo(550, yPos + 5)
-      .stroke(); // Line above total
-    doc.fontSize(12).text(`Total: $${purchaseOrder.total.toFixed(2)}`, 460, yPos + 10, { bold: true });
+      .stroke();
 
-    /*  purchaseOrder.items.forEach((item, index) => {
-      doc.text(
-        `${index + 1}. ${item.itemName} - ${item.quantity} x $${item.price.toFixed(2)} = $${(
-          item.quantity * item.price
-        ).toFixed(2)}`
-      );
-    });
+    doc.moveDown(4);
+    yPos = doc.y;
+    doc.fontSize(12).text(`Sub Total`, 400, yPos + 20);
+    doc.fontSize(12).text(`Discount`, 400, yPos + 40);
+    doc.fontSize(12).text(`Tax`, 400, yPos + 60);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .text(`Total`, 400, yPos + 80);
+    doc.font('Helvetica');
 
-    doc.moveDown();
-    doc.text(`Total: $${purchaseOrder.total.toFixed(2)}`, { align: 'right' }); */
+    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 20);
+    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 40);
+    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 60);
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 80);
+
+    doc.fontSize(8).text(`Comments or Instructions`, 50, yPos + 20);
+    doc.rect(50, yPos + 30, 300, 60);
+    doc.font('Helvetica');
+    // Final footer
+    generatePDFFooter(doc, purchaseOrder);
   });
 };
 

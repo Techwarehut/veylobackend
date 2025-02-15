@@ -10,6 +10,7 @@ const allRoles = {
     'addPurchaseOrders',
     'getPurchaseOrders',
     'updatePurchaseOrders',
+    'getChecklists',
   ],
   owner: [
     'getUsers',
@@ -25,6 +26,8 @@ const allRoles = {
     'updatePurchaseOrders',
     'getTenant',
     'manageTenant',
+    'manageChecklists',
+    'getChecklists',
   ],
   admin: [
     'getUsers',
@@ -40,6 +43,8 @@ const allRoles = {
     'updatePurchaseOrders',
     'getTenant',
     'manageTenant',
+    'manageChecklists',
+    'getChecklists',
   ],
 };
 
