@@ -7,7 +7,6 @@ const checklistSchema = mongoose.Schema(
     checklist_name: { type: String, required: true, trim: true }, // Added trim to remove unwanted spaces
     tasks: [
       {
-        task_id: { type: mongoose.Schema.Types.ObjectId, required: true }, // Changed to ObjectId for consistency
         task_name: { type: String, required: true, trim: true },
         status: { type: String, enum: ['pending', 'completed'], default: 'pending', trim: true },
         createdAt: { type: Date, default: Date.now }, // Track task creation

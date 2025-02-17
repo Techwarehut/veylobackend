@@ -6,7 +6,6 @@ const { checklistService } = require('../services');
 
 // Create a new checklist
 const createChecklist = catchAsync(async (req, res) => {
-  console.log('Iam here');
   const tenantId = req.user.tenantID;
 
   if (!tenantId) {

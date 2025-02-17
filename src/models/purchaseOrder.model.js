@@ -72,6 +72,11 @@ const purchaseOrderSchema = mongoose.Schema(
       ref: 'Customer', // Reference to the Customer model
       default: null,
     },
+    comment: {
+      type: String,
+
+      trim: true,
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields

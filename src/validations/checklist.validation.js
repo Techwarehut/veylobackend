@@ -62,7 +62,6 @@ const addTask = {
     checklistId: Joi.string().custom(objectId).required(), // Checklist ID is required
   }),
   body: Joi.object().keys({
-    task_id: Joi.string().required(), // Task ID is required
     task_name: Joi.string().required(), // Task name is required
     status: Joi.string().valid('pending', 'completed').optional(), // Task status must be pending or completed
   }),

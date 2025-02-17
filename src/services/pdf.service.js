@@ -243,25 +243,33 @@ const generatePurchaseOrderPDF = async (purchaseOrder) => {
 
     doc.moveDown(4);
     yPos = doc.y;
-    doc.fontSize(12).text(`Sub Total`, 400, yPos + 20);
+    /*  doc.fontSize(12).text(`Sub Total`, 400, yPos + 20);
     doc.fontSize(12).text(`Discount`, 400, yPos + 40);
-    doc.fontSize(12).text(`Tax`, 400, yPos + 60);
+    doc.fontSize(12).text(`Tax`, 400, yPos + 60); */
     doc
       .font('Helvetica-Bold')
       .fontSize(12)
-      .text(`Total`, 400, yPos + 80);
+      .text(`Total`, 400, yPos + 40);
     doc.font('Helvetica');
+    doc.fontSize(12).text(`(excluding Taxes)`, 400, yPos + 60);
 
-    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 20);
+    /*  doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 20);
     doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 40);
-    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 60);
+    doc.fontSize(12).text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 60); */
     doc
       .font('Helvetica-Bold')
       .fontSize(12)
-      .text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 80);
+      .text(`${currency}${purchaseOrder.total.toFixed(2)}`, 460, yPos + 40);
 
     doc.fontSize(8).text(`Comments or Instructions`, 50, yPos + 20);
     doc.rect(50, yPos + 30, 300, 60);
+    // Add the text inside the rectangle
+    doc.fontSize(8).text(purchaseOrder.comment, 50 + 5, yPos + 30 + 5, {
+      width: 300 - 10, // Ensuring the text does not overflow the rectangle's width
+      align: 'left', // Align the text to the left inside the rectangle
+      lineBreak: true, // Allow wrapping of text if necessary
+    });
+
     doc.font('Helvetica');
     // Final footer
     generatePDFFooter(doc, purchaseOrder);

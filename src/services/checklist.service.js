@@ -8,7 +8,6 @@ const ApiError = require('../utils/ApiError');
  * @returns {Promise<Checklist>}
  */
 const createChecklist = async (checklistBody) => {
-  console.log('I am here', checklistBody);
   return Checklist.create(checklistBody);
 };
 

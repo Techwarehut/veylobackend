@@ -43,6 +43,10 @@ const register = catchAsync(async (req, res) => {
 
   tenant = await tenantService.createTenant(tenantData);
 
+  // Step 2: Add default job types for the newly created tenant
+  const defaultJobTypes = ['Inspection', 'Service', 'Maintenance', 'Support'];
+  await jobTypeService.createDefaultJobTypesForTenant(tenant._id, defaultJobTypes);
+
   // Step 2: Create the user and associate with the tenant
   const userData = {
     name,

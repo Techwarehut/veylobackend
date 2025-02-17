@@ -148,10 +148,10 @@ const deletePurchaseOrder = catchAsync(async (req, res) => {
 // Update the status of a purchase order
 const updateStatus = catchAsync(async (req, res) => {
   const { purchaseOrderId } = req.params;
-  const { status } = req.body;
+  const { status, comment } = req.body;
   const userId = req.user.id;
 
-  const purchaseOrder = await purchaseOrderService.updatePurchaseOrderStatus(purchaseOrderId, status, userId);
+  const purchaseOrder = await purchaseOrderService.updatePurchaseOrderStatus(purchaseOrderId, status, userId, comment);
 
   if (!purchaseOrder) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Purchase order not found');

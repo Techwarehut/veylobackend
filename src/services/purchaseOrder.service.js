@@ -68,9 +68,10 @@ const deletePurchaseOrderById = async (purchaseOrderId) => {
  * @param {string} status
  * @returns {Promise<PurchaseOrder>}
  */
-const updatePurchaseOrderStatus = async (purchaseOrderId, status, userId) => {
+const updatePurchaseOrderStatus = async (purchaseOrderId, status, userId, comment) => {
   const purchaseOrder = await getPurchaseOrderById(purchaseOrderId);
   purchaseOrder.status = status;
+  purchaseOrder.comment = comment;
 
   // If status is 'Approved' or 'Rejected', store the userId in approvedBy
   if (status === 'Approved' || status === 'Rejected') {
