@@ -7,3 +7,4 @@ module.exports.PurchaseOrder = require('./purchaseOrder.model');
 module.exports.Checklist = require('./checklist.model');
 module.exports.Subscription = require('./subscription.model');
 module.exports.JobTypes = require('./jobtypes.model');
+module.exports.Job = require('./job.model');

@@ -9,3 +9,4 @@ module.exports.vendorService = require('./vendor.service');
 module.exports.purchaseOrderService = require('./purchaseOrder.service');
 module.exports.checklistService = require('./checklist.service');
 module.exports.jobtypesService = require('./jobtypes.service');
+module.exports.jobService = require('./job.service');

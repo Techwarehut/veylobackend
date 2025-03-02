@@ -8,6 +8,7 @@ const purchaseOrderRoute = require('./purchaseOrder.route');
 const tenantRoute = require('./tenant.route');
 const checklistRoute = require('./checklist.route');
 const jobtypesRoute = require('./jobtypes.route');
+const jobRoute = require('./job.route');
 const config = require('../../config/config');
 
 const router = express.Router();
@@ -44,6 +45,10 @@ const defaultRoutes = [
   {
     path: '/jobtypes',
     route: jobtypesRoute,
+  },
+  {
+    path: '/job',
+    route: jobRoute,
   },
 ];
 

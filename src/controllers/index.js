@@ -6,3 +6,4 @@ module.exports.purchaseOrderController = require('./purchaseOrder.controller');
 module.exports.tenantController = require('./tenant.controller');
 module.exports.checklistController = require('./checklist.controller');
 module.exports.jobtypesController = require('./jobtypes.controller');
+module.exports.jobController = require('./job.controller');

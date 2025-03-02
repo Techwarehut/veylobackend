@@ -6,3 +6,4 @@ module.exports.purchaseOrderValidation = require('./purchaseOrder.validation');
 module.exports.tenantValidation = require('./tenant.validation');
 module.exports.checklistValidation = require('./checklist.validation');
 module.exports.jobtypesValidation = require('./jobtypes.validation');
+module.exports.jobValidation = require('./job.validation');

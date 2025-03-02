@@ -5,8 +5,6 @@ const catchAsync = require('../utils/catchAsync');
 const { purchaseOrderService, pdfService, emailService } = require('../services');
 const { PurchaseOrder } = require('../models');
 
-const mongoose = require('mongoose');
-
 // Create a new purchase order
 const createPurchaseOrder = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
