@@ -1,7 +1,8 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
-const { jobService } = require('../services');
+const { jobService, customerService } = require('../services');
 const { Job } = require('../models');
+const pick = require('../utils/pick');
 
 const createJob = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
@@ -90,8 +91,44 @@ const getJobs = catchAsync(async (req, res) => {
     ];
   }
 
-  const jobs = await jobService.getJobs(filter, options);
-  res.send(jobs);
+  const result = await jobService.getJobs(filter, options);
+
+  const populatedResult = await Job.populate(result.results, [
+    //{ path: 'siteLocation', select: '_id siteContactPerson' },
+    { path: 'reportedBy', select: 'id name profileUrl' },
+    //{ path: 'approvedBy', select: 'id name profileUrl' },
+    { path: 'customer', select: 'id  businessName' },
+    // { path: 'jobID', select: 'jobTitle jobCode' },
+  ]);
+
+  // Step 2: Manually extract the correct `siteLocation` from the embedded array
+
+  for (const job of populatedResult) {
+    if (job.customer && job.siteLocation) {
+      // Get customer details asynchronously
+      const customerDetails = await customerService.getCustomerById(job.customer._id);
+      console.log('Job siteLocation:', job.siteLocation);
+      console.log('Customer details:', customerDetails);
+
+      // Find the matching site location
+      const matchingSiteLocation = customerDetails?.siteLocations.find(
+        (location) => location._id.toString() === job.siteLocation.toString()
+      );
+      console.log('Matching siteLocation:', matchingSiteLocation);
+
+      // Update the job's siteLocation with the matching siteLocation, or null if not found
+      job.siteLocation = matchingSiteLocation || null;
+    }
+  }
+
+  console.log('Updated populatedResult:', populatedResult);
+
+  res.send({
+    results: populatedResult,
+    totalResults: result.totalResults,
+    totalPages: result.totalPages,
+    currentPage: options.page,
+  });
 });
 
 const getJob = catchAsync(async (req, res) => {

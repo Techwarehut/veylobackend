@@ -47,7 +47,7 @@ const defaultRoutes = [
     route: jobtypesRoute,
   },
   {
-    path: '/job',
+    path: '/jobs',
     route: jobRoute,
   },
 ];

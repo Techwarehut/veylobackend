@@ -69,7 +69,7 @@ const jobSchema = mongoose.Schema(
     status: { type: String, required: true },
     label: { type: String, trim: true },
     dueDate: { type: Date, required: true },
-    priority: { type: Number, required: true },
+    priority: { type: String, required: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
     siteLocation: { type: mongoose.Schema.Types.ObjectId, ref: 'SiteLocation', required: true },
     estimateId: { type: String },

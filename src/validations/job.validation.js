@@ -3,20 +3,19 @@ const { objectId } = require('./custom.validation');
 
 const createJob = {
   body: Joi.object().keys({
-    tenantId: Joi.string().custom(objectId).required(), // Tenant ID is required
-    jobTitle: Joi.string().trim().required(), // Job title is required
-    jobDescription: Joi.string().trim().required(), // Job description is required
+    jobTitle: Joi.string().trim().optional().allow(''), // Job title is required
+    jobDescription: Joi.string().trim().optional().allow(''), // Job description is required
     jobType: Joi.string().required(), // Job type is required
     reportedBy: Joi.string().custom(objectId).required(), // User who reported the job
-    assignedTo: Joi.array().items(Joi.string().custom(objectId)).optional(), // List of assigned users
+    assignedTo: Joi.array().items(Joi.string().custom(objectId)).optional().allow(null), // List of assigned users
     status: Joi.string().required(), // Job status is required
-    label: Joi.string().trim().optional(), // Optional label
+    label: Joi.string().trim().optional().allow(''), // Optional label
     dueDate: Joi.date().required(), // Due date is required
-    priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').required(), // Priority validation
+    priority: Joi.string().valid('P1', 'P2', 'P3').required(), // Priority validation
     customer: Joi.string().custom(objectId).required(), // Customer ID is required
     siteLocation: Joi.string().custom(objectId).required(), // Site location is required
-    estimateId: Joi.string().optional(), // Estimate ID is optional
-    invoiceId: Joi.string().optional(), // Invoice ID is optional
+    estimateId: Joi.string().optional().allow(''), // Estimate ID is optional
+    invoiceId: Joi.string().optional().allow(''), // Invoice ID is optional
     comments: Joi.array()
       .items(
         Joi.object().keys({
@@ -35,11 +34,11 @@ const createJob = {
       )
       .optional(),
     images: Joi.array().items(Joi.string()).optional(), // Image URLs
-    checklistID: Joi.string().optional(), // Checklist ID
+    checklistID: Joi.string().optional().allow(''), // Checklist ID
     recurrence: Joi.object()
       .keys({
         type: Joi.string().valid('none', 'daily', 'weekly', 'monthly').default('none'),
-        daysOfWeek: Joi.string().optional(),
+        daysOfWeek: Joi.string().optional().allow(''),
         completedIterations: Joi.number().integer().min(0).optional(),
         totalIterations: Joi.number().integer().min(0).optional(),
         dueDates: Joi.array().items(Joi.date()).optional(),
@@ -50,7 +49,6 @@ const createJob = {
 
 const getJobs = {
   query: Joi.object().keys({
-    tenantId: Joi.string().custom(objectId).required(), // Tenant filter
     customer: Joi.string().custom(objectId).optional(), // Customer filter
     siteLocation: Joi.string().custom(objectId).optional(), // Site location filter
     status: Joi.string().optional(), // Status filter

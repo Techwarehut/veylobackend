@@ -144,6 +144,8 @@ const customerSchema = mongoose.Schema(
 // Add plugins for JSON conversion and pagination
 customerSchema.plugin(toJSON);
 customerSchema.plugin(paginate);
+//siteLocationSchema.plugin(toJSON);
+//siteLocationSchema.plugin(paginate);
 
 // Static method to check if email is already taken
 customerSchema.statics.isEmailTaken = async function (email, excludeCustomerId) {
@@ -169,5 +171,10 @@ customerSchema.methods.activate = async function () {
 
 // Define the Customer model
 const Customer = mongoose.model('Customer', customerSchema);
+//const SiteLocation = mongoose.model('SiteLocation', siteLocationSchema);
 
+/* module.exports = {
+  Customer,
+  SiteLocation,
+}; */
 module.exports = Customer;
