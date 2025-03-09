@@ -34,8 +34,30 @@ const createJob = catchAsync(async (req, res) => {
     jobNumber: newJobNumber,
     reportedBy: req.user.id,
   };
-  const job = await jobService.createJob(jobData);
-  res.status(httpStatus.CREATED).send(job);
+  const result = await jobService.createJob(jobData);
+
+  const populatedResult = await Job.populate(result, [
+    //{ path: 'siteLocation', select: '_id siteContactPerson' },
+    { path: 'reportedBy', select: 'id name profileUrl' },
+    //{ path: 'approvedBy', select: 'id name profileUrl' },
+    { path: 'customer', select: 'id  businessName' },
+    // { path: 'jobID', select: 'jobTitle jobCode' },
+  ]);
+
+  // Step 2: Manually extract the correct `siteLocation` from the embedded array
+
+  if (populatedResult.customer && populatedResult.siteLocationId) {
+    const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
+
+    const matchingSiteLocation = customerDetails?.siteLocations?.find(
+      (location) => location._id.toString() === populatedResult.siteLocationId.toString()
+    );
+
+    // Assign detailed data to the new field
+    populatedResult.siteLocation = matchingSiteLocation || null;
+  }
+
+  res.status(httpStatus.CREATED).send(populatedResult);
 });
 
 const getJobs = catchAsync(async (req, res) => {
@@ -104,24 +126,17 @@ const getJobs = catchAsync(async (req, res) => {
   // Step 2: Manually extract the correct `siteLocation` from the embedded array
 
   for (const job of populatedResult) {
-    if (job.customer && job.siteLocation) {
-      // Get customer details asynchronously
+    if (job.customer && job.siteLocationId) {
       const customerDetails = await customerService.getCustomerById(job.customer._id);
-      console.log('Job siteLocation:', job.siteLocation);
-      console.log('Customer details:', customerDetails);
 
-      // Find the matching site location
-      const matchingSiteLocation = customerDetails?.siteLocations.find(
-        (location) => location._id.toString() === job.siteLocation.toString()
+      const matchingSiteLocation = customerDetails?.siteLocations?.find(
+        (location) => location._id.toString() === job.siteLocationId.toString()
       );
-      console.log('Matching siteLocation:', matchingSiteLocation);
 
-      // Update the job's siteLocation with the matching siteLocation, or null if not found
+      // Assign detailed data to the new field
       job.siteLocation = matchingSiteLocation || null;
     }
   }
-
-  console.log('Updated populatedResult:', populatedResult);
 
   res.send({
     results: populatedResult,

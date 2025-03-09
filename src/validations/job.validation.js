@@ -13,7 +13,7 @@ const createJob = {
     dueDate: Joi.date().required(), // Due date is required
     priority: Joi.string().valid('P1', 'P2', 'P3').required(), // Priority validation
     customer: Joi.string().custom(objectId).required(), // Customer ID is required
-    siteLocation: Joi.string().custom(objectId).required(), // Site location is required
+    siteLocationId: Joi.string().custom(objectId).required(), // Site location is required
     estimateId: Joi.string().optional().allow(''), // Estimate ID is optional
     invoiceId: Joi.string().optional().allow(''), // Invoice ID is optional
     comments: Joi.array()

@@ -71,7 +71,21 @@ const jobSchema = mongoose.Schema(
     dueDate: { type: Date, required: true },
     priority: { type: String, required: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-    siteLocation: { type: mongoose.Schema.Types.ObjectId, ref: 'SiteLocation', required: true },
+    siteLocationId: { type: mongoose.Schema.Types.ObjectId, ref: 'SiteLocation', required: true },
+    siteLocation: {
+      type: new mongoose.Schema({
+        siteName: String,
+        siteContactPerson: String,
+        siteContactPhone: String,
+        AddressLine: String,
+        City: String,
+        Province: String,
+        zipcode: String,
+        _id: mongoose.Schema.Types.ObjectId,
+      }),
+      default: null,
+    },
+
     estimateId: { type: String },
     invoiceId: { type: String },
     comments: [commentSchema],
@@ -114,7 +128,7 @@ jobSchema.plugin(paginate);
 jobSchema.pre('save', async function (next) {
   const customer = await this.model('Customer').findOne({
     _id: this.customer,
-    siteLocations: { $elemMatch: { _id: this.siteLocation } }, // Ensuring siteLocation belongs to this customer
+    siteLocations: { $elemMatch: { _id: this.siteLocationId } }, // Ensuring siteLocation belongs to this customer
   });
 
   if (!customer) {
