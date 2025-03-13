@@ -51,8 +51,9 @@ const getJobs = {
   query: Joi.object().keys({
     customer: Joi.string().custom(objectId).optional(), // Customer filter
     siteLocation: Joi.string().custom(objectId).optional(), // Site location filter
-    status: Joi.string().optional(), // Status filter
-    jobType: Joi.string().optional(), // Job type filter
+    status: Joi.string().optional().allow(''), // Status filter
+    jobType: Joi.string().optional().allow(''), // Job type filter
+    label: Joi.string().trim().optional().allow(''), // Optional label
     assignedTo: Joi.string().custom(objectId).optional(), // Assigned user filter
     priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional(), // Priority filter
     searchText: Joi.string().optional(), // Search text filter

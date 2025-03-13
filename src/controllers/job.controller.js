@@ -61,7 +61,7 @@ const createJob = catchAsync(async (req, res) => {
 });
 
 const getJobs = catchAsync(async (req, res) => {
-  const { searchText, status } = req.query;
+  const { searchText, status, jobType } = req.query;
   const filter = pick(req.query, ['assignedTo', 'label', 'customer', 'jobType', 'status']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // Assuming the logged-in user's ID is stored in req.user
@@ -98,6 +98,12 @@ const getJobs = catchAsync(async (req, res) => {
   if (status) {
     const statusArray = status.split(','); // Convert status string to an array
     filter.status = { $in: statusArray }; // Use $in operator for multiple statuses
+  }
+
+  // Handle multiple jobType (comma-separated values)
+  if (jobType) {
+    const jobTypeArray = jobType.split(','); // Convert status string to an array
+    filter.jobType = { $in: jobTypeArray }; // Use $in operator for multiple statuses
   }
 
   // Add search logic if searchText exists
@@ -320,55 +326,56 @@ const getUniqueAssignee = catchAsync(async (req, res) => {
 });
 
 const getUniqueCustomers = catchAsync(async (req, res) => {
-  const tenantId = req.user.tenantID;
-  const result = await Job.aggregate([
-    {
-      $lookup: {
-        from: 'customer', // Name of the collection where vendors are stored
-        let: { customerId: '$customer' }, // Pass the vendor ObjectId from PurchaseOrder
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$_id', '$$customerId'] }, // Match on vendor ID
-                  { $eq: ['$tenantId', tenantId] }, // Match on tenantId
-                ],
-              },
+  try {
+    const tenantId = req.user.tenantID;
+
+    const result = await Job.aggregate([
+      {
+        $lookup: {
+          from: 'customers', // Ensure this matches your actual collection name
+          localField: 'customer', // Job.customer holds the ObjectId of Customer
+          foreignField: '_id', // Match with _id in Customer collection
+          as: 'customerDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$customerDetails',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          $and: [
+            { 'customerDetails._id': { $ne: null } }, // Ensure customer exists
+            { 'customerDetails.tenantId': tenantId }, // Match tenantId
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          customers: {
+            $addToSet: {
+              _id: '$customerDetails._id',
+              businessName: '$customerDetails.businessName',
             },
-          },
-        ],
-        as: 'customerDetails',
-      },
-    },
-    {
-      $unwind: {
-        path: '$customerDetails',
-        preserveNullAndEmptyArrays: true, // Keep entries without a vendor assigned
-      },
-    },
-    {
-      $project: {
-        'customerDetails._id': 1, // Include vendor ID
-        'customerDetails.businessName': 1, // Only include companyName from vendor
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        customers: {
-          $addToSet: {
-            _id: { $ifNull: ['$customerDetails._id', null] }, // Use vendor ID if available, null otherwise
-            businessName: { $ifNull: ['$customerDetails.businessName', 'Unassigned'] }, // Use companyName or fallback to 'Unassigned'
           },
         },
       },
-    },
-  ]);
+      {
+        $project: {
+          _id: 0, // Remove unnecessary _id
+          customers: 1,
+        },
+      },
+    ]);
 
-  res.send({
-    customers: result[0]?.customers || [],
-  });
+    res.status(200).json({ customers: result[0]?.customers || [] });
+  } catch (error) {
+    console.error('Error fetching unique customers:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 const getUniqueLabels = catchAsync(async (req, res) => {
