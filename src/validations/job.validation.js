@@ -28,8 +28,8 @@ const createJob = {
       .items(
         Joi.object().keys({
           employeeId: Joi.string().custom(objectId).required(),
-          hours: Joi.number().positive().required(),
-          notes: Joi.string().required(),
+          hours: Joi.number().min(0).required(),
+          notes: Joi.string().optional().allow(''),
         })
       )
       .optional(),
@@ -54,7 +54,7 @@ const getJobs = {
     status: Joi.string().optional().allow(''), // Status filter
     jobType: Joi.string().optional().allow(''), // Job type filter
     label: Joi.string().trim().optional().allow(''), // Optional label
-    assignedTo: Joi.string().custom(objectId).optional(), // Assigned user filter
+    assignedTo: Joi.string().custom(objectId).optional().allow(''), // Assigned user filter
     priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional(), // Priority filter
     searchText: Joi.string().optional(), // Search text filter
     sortBy: Joi.string().optional(), // Sorting field
@@ -75,19 +75,19 @@ const updateJob = {
   }),
   body: Joi.object()
     .keys({
-      jobTitle: Joi.string().trim().optional(),
-      jobDescription: Joi.string().trim().optional(),
-      jobType: Joi.string().optional(),
-      reportedBy: Joi.string().custom(objectId).optional(),
-      assignedTo: Joi.array().items(Joi.string().custom(objectId)).optional(),
-      status: Joi.string().optional(),
-      label: Joi.string().trim().optional(),
-      dueDate: Joi.date().optional(),
-      priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional(),
-      customer: Joi.string().custom(objectId).optional(),
-      siteLocation: Joi.string().custom(objectId).optional(),
-      estimateId: Joi.string().optional(),
-      invoiceId: Joi.string().optional(),
+      jobTitle: Joi.string().trim().optional().allow(''),
+      jobDescription: Joi.string().trim().optional().allow(''),
+      jobType: Joi.string().optional().allow(''),
+      reportedBy: Joi.string().custom(objectId).optional().allow(''),
+      assignedTo: Joi.array().items(Joi.string().custom(objectId)).optional().allow(''),
+      status: Joi.string().optional().allow(''),
+      label: Joi.string().trim().optional().allow(''),
+      dueDate: Joi.date().optional().allow(''),
+      priority: Joi.string().valid('P1', 'P2', 'P3').optional().allow(''),
+      customer: Joi.string().custom(objectId).optional().allow(''),
+      siteLocationId: Joi.string().custom(objectId).optional().allow(''),
+      estimateId: Joi.string().optional().allow(''),
+      invoiceId: Joi.string().optional().allow(''),
       comments: Joi.array()
         .items(
           Joi.object().keys({
@@ -95,27 +95,30 @@ const updateJob = {
             createdBy: Joi.string().custom(objectId).required(),
           })
         )
-        .optional(),
+        .optional()
+        .allow(''),
       hoursSpent: Joi.array()
         .items(
           Joi.object().keys({
             employeeId: Joi.string().custom(objectId).required(),
-            hours: Joi.number().positive().required(),
-            notes: Joi.string().required(),
+            hours: Joi.number().min(0).required(),
+            notes: Joi.string().required().allow(''),
           })
         )
-        .optional(),
-      images: Joi.array().items(Joi.string()).optional(),
-      checklistID: Joi.string().optional(),
+        .optional()
+        .allow(''),
+      images: Joi.array().items(Joi.string()).optional().allow(''),
+      checklistID: Joi.string().optional().allow(''),
       recurrence: Joi.object()
         .keys({
           type: Joi.string().valid('none', 'daily', 'weekly', 'monthly').optional(),
-          daysOfWeek: Joi.string().optional(),
+          daysOfWeek: Joi.string().optional().allow(''),
           completedIterations: Joi.number().integer().min(0).optional(),
           totalIterations: Joi.number().integer().min(0).optional(),
           dueDates: Joi.array().items(Joi.date()).optional(),
         })
-        .optional(),
+        .optional()
+        .allow(''),
     })
     .min(1), // Ensure at least one field is updated
 };
@@ -132,7 +135,6 @@ const updateJobStatus = {
   }),
   body: Joi.object().keys({
     status: Joi.string().required(),
-    comment: Joi.string().optional(),
   }),
 };
 

@@ -17,7 +17,7 @@ const commentSchema = mongoose.Schema(
 const hoursSpentSchema = mongoose.Schema({
   employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   hours: { type: Number, required: true },
-  notes: { type: String, required: true },
+  notes: { type: String },
 });
 
 // Define the JobRecurrence schema
