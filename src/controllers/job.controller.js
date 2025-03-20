@@ -5,6 +5,29 @@ const { Job } = require('../models');
 const pick = require('../utils/pick');
 const mongoose = require('mongoose'); // Ensure this is present!
 
+const populateJob = async (job) => {
+  const populatedJob = await Job.populate(job, [
+    { path: 'reportedBy', select: 'id name profileUrl' },
+    { path: 'assignedTo', select: 'id name profileUrl' },
+    { path: 'customer', select: 'id businessName' },
+    { path: 'comments.createdBy', select: 'id name profileUrl' },
+  ]);
+
+  // Step 2: Manually extract the correct `siteLocation` from the embedded array
+  if (populatedJob.customer && populatedJob.siteLocationId) {
+    const customerDetails = await customerService.getCustomerById(populatedJob.customer._id);
+
+    const matchingSiteLocation = customerDetails?.siteLocations?.find(
+      (location) => location._id.toString() === populatedJob.siteLocationId.toString()
+    );
+
+    // Assign detailed data to the new field
+    populatedJob.siteLocation = matchingSiteLocation || null;
+  }
+
+  return populatedJob;
+};
+
 const createJob = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
 
@@ -174,48 +197,15 @@ const getJobs = catchAsync(async (req, res) => {
 const getJob = catchAsync(async (req, res) => {
   const job = await jobService.getJobById(req.params.jobId);
 
-  const populatedResult = await Job.populate(job, [
-    { path: 'reportedBy', select: 'id name profileUrl' },
-    { path: 'assignedTo', select: 'id name profileUrl' },
-    { path: 'customer', select: 'id  businessName' },
-  ]);
-
-  // Step 2: Manually extract the correct `siteLocation` from the embedded array
-
-  if (populatedResult.customer && populatedResult.siteLocationId) {
-    const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
-
-    const matchingSiteLocation = customerDetails?.siteLocations?.find(
-      (location) => location._id.toString() === populatedResult.siteLocationId.toString()
-    );
-
-    // Assign detailed data to the new field
-    populatedResult.siteLocation = matchingSiteLocation || null;
-  }
+  const populatedResult = await populateJob(job);
+  console.log(populatedResult);
   res.send(populatedResult);
 });
 
 const updateJob = catchAsync(async (req, res) => {
   const job = await jobService.updateJobById(req.params.jobId, req.body);
 
-  const populatedResult = await Job.populate(job, [
-    { path: 'reportedBy', select: 'id name profileUrl' },
-    { path: 'assignedTo', select: 'id name profileUrl' },
-    { path: 'customer', select: 'id  businessName' },
-  ]);
-
-  // Step 2: Manually extract the correct `siteLocation` from the embedded array
-
-  if (populatedResult.customer && populatedResult.siteLocationId) {
-    const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
-
-    const matchingSiteLocation = customerDetails?.siteLocations?.find(
-      (location) => location._id.toString() === populatedResult.siteLocationId.toString()
-    );
-
-    // Assign detailed data to the new field
-    populatedResult.siteLocation = matchingSiteLocation || null;
-  }
+  const populatedResult = await populateJob(job);
   res.send(populatedResult);
 });
 
@@ -226,24 +216,9 @@ const deleteJob = catchAsync(async (req, res) => {
 
 const updateJobStatus = catchAsync(async (req, res) => {
   const job = await jobService.updateJobStatus(req.params.jobId, req.body.status);
-  const populatedResult = await Job.populate(job, [
-    { path: 'reportedBy', select: 'id name profileUrl' },
-    { path: 'assignedTo', select: 'id name profileUrl' },
-    { path: 'customer', select: 'id  businessName' },
-  ]);
+  // Use the reusable populate function with siteLocation logic included
+  const populatedResult = await populateJob(job);
 
-  // Step 2: Manually extract the correct `siteLocation` from the embedded array
-
-  if (populatedResult.customer && populatedResult.siteLocationId) {
-    const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
-
-    const matchingSiteLocation = customerDetails?.siteLocations?.find(
-      (location) => location._id.toString() === populatedResult.siteLocationId.toString()
-    );
-
-    // Assign detailed data to the new field
-    populatedResult.siteLocation = matchingSiteLocation || null;
-  }
   res.send(populatedResult);
 });
 
@@ -253,12 +228,12 @@ const getJobsByCustomer = catchAsync(async (req, res) => {
 });
 
 const addCommentToJob = catchAsync(async (req, res) => {
-  const job = await jobService.addCommentToJob(req.params.jobId, req.body.comment);
+  const job = await jobService.addCommentToJob(req.params.jobId, req.body);
   res.send(job);
 });
 
 const removeCommentFromJob = catchAsync(async (req, res) => {
-  const job = await jobService.removeCommentFromJob(req.params.jobId, req.body.commentId);
+  const job = await jobService.removeCommentFromJob(req.params.jobId, req.body.comment);
   res.send(job);
 });
 
@@ -279,13 +254,18 @@ const removeHoursFromJob = catchAsync(async (req, res) => {
 });
 
 const updateJobType = catchAsync(async (req, res) => {
-  const job = await jobService.updateJobType(req.params.jobId, req.body.type);
-  res.send(job);
+  const job = await jobService.updateJobType(req.params.jobId, req.body.jobType);
+
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const updateJobPriority = catchAsync(async (req, res) => {
   const job = await jobService.updateJobPriority(req.params.jobId, req.body.priority);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const assignUserToJob = catchAsync(async (req, res) => {
@@ -299,28 +279,38 @@ const deleteUserFromJob = catchAsync(async (req, res) => {
 });
 
 const addCustomerToJob = catchAsync(async (req, res) => {
-  const job = await jobService.addCustomerToJob(req.params.jobId, req.body.customerId);
-  res.send(job);
+  const job = await jobService.addCustomerToJob(req.params.jobId, req.body.customer);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const deleteCustomerFromJob = catchAsync(async (req, res) => {
-  const job = await jobService.deleteCustomerFromJob(req.params.jobId, req.body.customerId);
-  res.send(job);
+  const job = await jobService.deleteCustomerFromJob(req.params.jobId);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const addSiteToJob = catchAsync(async (req, res) => {
-  const job = await jobService.addSiteToJob(req.params.jobId, req.body.siteId);
-  res.send(job);
+  const job = await jobService.addSiteToJob(req.params.jobId, req.body.siteLocationId);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const deleteSiteFromJob = catchAsync(async (req, res) => {
-  const job = await jobService.deleteSiteFromJob(req.params.jobId, req.body.siteId);
-  res.send(job);
+  const job = await jobService.deleteSiteFromJob(req.params.jobId);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const updateJobDueDate = catchAsync(async (req, res) => {
   const job = await jobService.updateJobDueDate(req.params.jobId, req.body.dueDate);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const addChecklistToJob = catchAsync(async (req, res) => {

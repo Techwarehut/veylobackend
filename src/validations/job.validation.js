@@ -199,7 +199,7 @@ const updateJobPriority = {
     jobId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
-    priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').required(),
+    priority: Joi.string().valid('P1', 'P2', 'P3', 'Critical').required(),
   }),
 };
 
@@ -224,7 +224,7 @@ const addCustomerToJob = {
     jobId: Joi.string().custom(objectId).required(),
   }),
   body: Joi.object().keys({
-    customerId: Joi.string().custom(objectId).required(),
+    customer: Joi.string().custom(objectId).required(),
   }),
 };
 

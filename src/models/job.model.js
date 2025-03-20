@@ -44,12 +44,12 @@ const jobSchema = mongoose.Schema(
 
       trim: true,
     },
-    jobTitle: { type: String, required: true, trim: true },
-    jobDescription: { type: String, required: true, trim: true },
+    jobTitle: { type: String, trim: true },
+    jobDescription: { type: String, trim: true },
     jobType: {
       type: String,
-      required: true,
-      validate: {
+      //required: true,
+      /*  validate: {
         validator: async function (value) {
           if (!this.tenantId) return false; // Ensure tenantId is available
 
@@ -61,7 +61,7 @@ const jobSchema = mongoose.Schema(
           return !!jobTypeDoc;
         },
         message: 'Invalid job type for this tenant.',
-      },
+      }, */
     },
 
     reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -70,8 +70,8 @@ const jobSchema = mongoose.Schema(
     label: { type: String, trim: true },
     dueDate: { type: Date, required: true },
     priority: { type: String, required: true },
-    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
-    siteLocationId: { type: mongoose.Schema.Types.ObjectId, ref: 'SiteLocation', required: true },
+    customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+    siteLocationId: { type: mongoose.Schema.Types.ObjectId, ref: 'SiteLocation' },
     siteLocation: {
       type: new mongoose.Schema({
         siteName: String,
@@ -126,16 +126,25 @@ jobSchema.plugin(toJSON);
 jobSchema.plugin(paginate);
 
 jobSchema.pre('save', async function (next) {
-  const customer = await this.model('Customer').findOne({
-    _id: this.customer,
-    siteLocations: { $elemMatch: { _id: this.siteLocationId } }, // Ensuring siteLocation belongs to this customer
-  });
-
-  if (!customer) {
-    return next(new Error('Site location must belong to the selected customer.'));
+  // If customer is null or undefined, skip the check
+  if (!this.customer) {
+    return next();
   }
 
-  next();
+  try {
+    const customer = await this.model('Customer').findOne({
+      _id: this.customer,
+      siteLocations: { $elemMatch: { _id: this.siteLocationId } }, // Ensuring siteLocation belongs to this customer
+    });
+
+    if (!customer) {
+      return next(new Error('Site location must belong to the selected customer.'));
+    }
+
+    next();
+  } catch (error) {
+    next(error); // Pass any errors to Mongoose error handler
+  }
 });
 
 /**

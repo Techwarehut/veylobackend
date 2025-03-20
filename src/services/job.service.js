@@ -53,6 +53,33 @@ const updateJobStatus = async (jobId, status) => {
   return updateJobById(jobId, { status });
 };
 
+const updateJobType = async (jobId, jobType) => {
+  return updateJobById(jobId, { jobType });
+};
+
+const updateJobPriority = async (jobId, priority) => {
+  return updateJobById(jobId, { priority });
+};
+
+const addCustomerToJob = async (jobId, customer) => {
+  return updateJobById(jobId, { customer });
+};
+
+const deleteCustomerFromJob = async (jobId) => {
+  return updateJobById(jobId, { customer: null });
+};
+
+const addSiteToJob = async (jobId, siteLocationId) => {
+  return updateJobById(jobId, { siteLocationId });
+};
+
+const deleteSiteFromJob = async (jobId) => {
+  return updateJobById(jobId, { siteLocationId: null });
+};
+const updateJobDueDate = async (jobId, dueDate) => {
+  return updateJobById(jobId, { dueDate });
+};
+
 /**
  * Get jobs by customer ID
  */
@@ -103,4 +130,11 @@ module.exports = {
   removeCommentFromJob,
   assignUserToJob,
   deleteUserFromJob,
+  updateJobType,
+  updateJobPriority,
+  updateJobDueDate,
+  addCustomerToJob,
+  deleteCustomerFromJob,
+  addSiteToJob,
+  deleteSiteFromJob,
 };
