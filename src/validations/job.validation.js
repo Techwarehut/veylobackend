@@ -49,7 +49,7 @@ const createJob = {
 
 const getJobs = {
   query: Joi.object().keys({
-    customer: Joi.string().custom(objectId).optional(), // Customer filter
+    customer: Joi.string().custom(objectId).optional().allow(''), // Customer filter
     siteLocation: Joi.string().custom(objectId).optional(), // Site location filter
     status: Joi.string().optional().allow(''), // Status filter
     jobType: Joi.string().optional().allow(''), // Job type filter

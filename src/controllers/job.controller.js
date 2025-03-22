@@ -83,7 +83,7 @@ const createJob = catchAsync(async (req, res) => {
 });
 
 const getJobs = catchAsync(async (req, res) => {
-  const { searchText, status, jobType, assignedTo, label } = req.query;
+  const { searchText, status, jobType, assignedTo, label, customer } = req.query;
   const filter = pick(req.query, ['assignedTo', 'label', 'customer', 'jobType', 'status']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // Assuming the logged-in user's ID is stored in req.user
@@ -161,6 +161,23 @@ const getJobs = catchAsync(async (req, res) => {
     filter.$or = [{ label: { $exists: false } }, { label: null }, { label: '' }];
   }
 
+  if (customer && customer.trim() !== '') {
+    // Ensure customer is not an empty string before checking ObjectId validity
+    if (mongoose.Types.ObjectId.isValid(customer)) {
+      filter.customer = new mongoose.Types.ObjectId(customer);
+    } else {
+      return res.status(400).json({ error: 'Invalid Customer ID' });
+    }
+  } else if (customer !== undefined && (customer === null || customer.trim() === '')) {
+    // Properly remove `customer` from the filter
+    delete filter.customer;
+
+    // Exclude empty string if it’s causing casting issues
+    filter.$or = [{ customer: { $exists: false } }, { customer: null }];
+  }
+
+  console.log(filter);
+
   const result = await jobService.getJobs(filter, options);
 
   const populatedResult = await Job.populate(result.results, [
@@ -185,7 +202,7 @@ const getJobs = catchAsync(async (req, res) => {
       job.siteLocation = matchingSiteLocation || null;
     }
   }
-
+  console.log(populatedResult);
   res.send({
     results: populatedResult,
     totalResults: result.totalResults,
@@ -229,7 +246,9 @@ const getJobsByCustomer = catchAsync(async (req, res) => {
 
 const addCommentToJob = catchAsync(async (req, res) => {
   const job = await jobService.addCommentToJob(req.params.jobId, req.body);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const removeCommentFromJob = catchAsync(async (req, res) => {
@@ -245,12 +264,16 @@ const addHoursToJob = catchAsync(async (req, res) => {
   }
 
   const job = await jobService.addHoursToJob(req.params.jobId, hours);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const removeHoursFromJob = catchAsync(async (req, res) => {
   const job = await jobService.removeHoursFromJob(req.params.jobId, req.body.employeeId);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const updateJobType = catchAsync(async (req, res) => {
@@ -270,7 +293,9 @@ const updateJobPriority = catchAsync(async (req, res) => {
 
 const assignUserToJob = catchAsync(async (req, res) => {
   const job = await jobService.assignUserToJob(req.params.jobId, req.body.userId);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const deleteUserFromJob = catchAsync(async (req, res) => {
@@ -389,6 +414,8 @@ const getUniqueAssignee = catchAsync(async (req, res) => {
     },
   ]);
 
+  console.log(result[0]?.assignees);
+
   res.status(200).json({ users: result[0]?.assignees || [] });
 });
 
@@ -396,6 +423,14 @@ const getUniqueCustomers = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
 
   const result = await Job.aggregate([
+    {
+      $match: {
+        $or: [
+          { customer: { $exists: true, $ne: '' } }, // Ignore empty customer values
+          { customer: null }, // Include jobs without customers
+        ],
+      },
+    },
     {
       $lookup: {
         from: 'customers', // Ensure this matches your actual collection name
@@ -412,32 +447,30 @@ const getUniqueCustomers = catchAsync(async (req, res) => {
     },
     {
       $match: {
-        $and: [
-          { 'customerDetails._id': { $ne: null } }, // Ensure customer exists
-          { 'customerDetails.tenantId': tenantId }, // Match tenantId
+        $or: [
+          { 'customerDetails.tenantId': tenantId }, // Keep only relevant customers
+          { customerDetails: null }, // Keep jobs with no assigned customers
         ],
       },
     },
     {
       $group: {
-        _id: null,
-        customers: {
-          $addToSet: {
-            _id: '$customerDetails._id',
-            businessName: '$customerDetails.businessName',
-          },
-        },
+        _id: '$customerDetails._id', // Group directly by customer ID
+        businessName: { $first: '$customerDetails.businessName' }, // Get the business name
       },
     },
     {
       $project: {
-        _id: 0, // Remove unnecessary _id
-        customers: 1,
+        _id: 0,
+        customerId: '$_id', // Rename _id to customerId
+        businessName: 1,
       },
     },
   ]);
 
-  res.status(200).json({ customers: result[0]?.customers || [] });
+  console.log(result);
+
+  res.status(200).json({ customers: result });
 });
 
 const getUniqueLabels = catchAsync(async (req, res) => {

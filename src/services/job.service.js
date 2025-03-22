@@ -108,7 +108,10 @@ const removeCommentFromJob = async (jobId, commentId) => {
  * Assign user to job
  */
 const assignUserToJob = async (jobId, userId) => {
-  return updateJobById(jobId, { assignedTo: userId });
+  const job = await getJobById(jobId);
+  job.assignedTo.push(userId);
+  await job.save();
+  return job;
 };
 
 /**
