@@ -1,5 +1,7 @@
 const httpStatus = require('http-status');
 const { PurchaseOrder } = require('../models');
+const { getJobById } = require('./job.service');
+
 const ApiError = require('../utils/ApiError');
 const mongoose = require('mongoose');
 
@@ -149,8 +151,11 @@ const removeItemFromPurchaseOrder = async (purchaseOrderId, itemId) => {
 const addJobToPurchaseOrder = async (purchaseOrderId, jobId) => {
   const purchaseOrder = await getPurchaseOrderById(purchaseOrderId);
 
+  const job = await getJobById(jobId);
+
   // Link the job to the purchase order by updating the jobID
   purchaseOrder.jobID = jobId;
+  purchaseOrder.customer = job.customer;
 
   await purchaseOrder.save();
   return purchaseOrder;
@@ -166,6 +171,7 @@ const removeJobFromPurchaseOrder = async (purchaseOrderId) => {
 
   // Unlink the job by setting jobID to null
   purchaseOrder.jobID = null;
+  purchaseOrder.customer = null;
 
   await purchaseOrder.save();
   return purchaseOrder;

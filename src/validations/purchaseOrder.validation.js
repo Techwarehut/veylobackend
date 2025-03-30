@@ -28,9 +28,9 @@ const createPurchaseOrder = {
 const getPurchaseOrders = {
   query: Joi.object().keys({
     //tenantId: Joi.string().custom(objectId).required(), // Tenant ID filter
-    vendor: Joi.string().custom(objectId).optional(), // Vendor ID filter
-    customer: Joi.string().custom(objectId).optional(), // Vendor ID filter
-    jobID: Joi.string().custom(objectId).optional(), // Vendor ID filter
+    vendor: Joi.string().custom(objectId).optional().allow(''), // Vendor ID filter
+    customer: Joi.string().custom(objectId).optional().allow(''), // Vendor ID filter
+    jobID: Joi.string().custom(objectId).optional().allow(''), // Vendor ID filter
     status: Joi.string().optional(), // Status filter
     searchText: Joi.string().optional(), // Pagination page
     sortBy: Joi.string().optional(), // Sorting field

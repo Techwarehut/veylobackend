@@ -215,6 +215,8 @@ const assignUserToJob = {
 const deleteUserFromJob = {
   params: Joi.object().keys({
     jobId: Joi.string().custom(objectId).required(),
+  }),
+  body: Joi.object().keys({
     userId: Joi.string().custom(objectId).required(),
   }),
 };

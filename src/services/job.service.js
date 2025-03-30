@@ -21,6 +21,7 @@ const getJobs = async (filter, options) => {
  */
 const getJobById = async (jobId) => {
   const job = await Job.findById(jobId);
+
   if (!job) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Job not found');
   }
@@ -109,7 +110,21 @@ const removeCommentFromJob = async (jobId, commentId) => {
  */
 const assignUserToJob = async (jobId, userId) => {
   const job = await getJobById(jobId);
+
+  // Check if the user is already assigned
+  if (job.assignedTo.includes(userId)) {
+    throw new Error('User is already assigned to this job.');
+  }
+
   job.assignedTo.push(userId);
+
+  // Initialize hoursSpent for the new user
+  job.hoursSpent.push({
+    employeeId: userId,
+    hours: 0,
+    notes: '', // Empty notes initially
+  });
+
   await job.save();
   return job;
 };
@@ -117,8 +132,43 @@ const assignUserToJob = async (jobId, userId) => {
 /**
  * Remove user from job
  */
-const deleteUserFromJob = async (jobId) => {
-  return updateJobById(jobId, { assignedTo: null });
+const deleteUserFromJob = async (jobId, userId) => {
+  const job = await getJobById(jobId);
+
+  if (!job) {
+    throw new Error('Job not found.');
+  }
+
+  // Remove user from assignedTo array
+  job.assignedTo = job.assignedTo.filter((id) => id.toString() !== userId.toString());
+
+  // Remove user's hoursSpent entry
+  job.hoursSpent = job.hoursSpent.filter((entry) => entry.employeeId.toString() !== userId.toString());
+
+  await job.save();
+  return job;
+};
+
+const addHoursToJob = async (jobId, userId, hours, notes = '') => {
+  const job = await getJobById(jobId);
+
+  if (!job) {
+    throw new Error('Job not found.');
+  }
+
+  // Find the user's hoursSpent entry
+  const userEntry = job.hoursSpent.find((entry) => entry.employeeId.toString() === userId.toString());
+
+  if (!userEntry) {
+    throw new Error('User is not assigned to this job.');
+  }
+
+  // replace hours to existing entry
+  userEntry.hours = hours;
+  if (notes) userEntry.notes = notes;
+
+  await job.save();
+  return job;
 };
 
 module.exports = {
@@ -140,4 +190,5 @@ module.exports = {
   deleteCustomerFromJob,
   addSiteToJob,
   deleteSiteFromJob,
+  addHoursToJob,
 };

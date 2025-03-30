@@ -254,7 +254,6 @@ const addJobToPurchaseOrder = catchAsync(async (req, res) => {
     { path: 'requestedBy', select: 'id name profileUrl' },
     { path: 'approvedBy', select: 'id name profileUrl' },
     { path: 'Customer', select: 'id businessName' },
-    { path: 'jobID', select: 'jobTitle jobCode' }, // Optionally populate job details
   ]);
 
   res.send(populatedResult);
@@ -277,7 +276,6 @@ const removeJobFromPurchaseOrder = catchAsync(async (req, res) => {
     { path: 'requestedBy', select: 'id name profileUrl' },
     { path: 'approvedBy', select: 'id name profileUrl' },
     { path: 'Customer', select: 'id businessName' },
-    { path: 'jobID', select: 'jobTitle jobCode' }, // Optionally populate job details
   ]);
 
   res.send(populatedResult);
@@ -468,43 +466,42 @@ const getUniqueJobs = catchAsync(async (req, res) => {
   const result = await PurchaseOrder.aggregate([
     {
       $lookup: {
-        from: 'vendors', // Name of the collection where vendors are stored
-        let: { vendorId: '$vendor' }, // Pass the vendor ObjectId from PurchaseOrder
+        from: 'jobs', // Name of the collection where vendors are stored
+        let: { jobId: '$jobID' }, // Pass the vendor ObjectId from PurchaseOrder
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$_id', '$$vendorId'] }, // Match on vendor ID
+                  { $eq: ['$_id', '$$jobId'] }, // Match on vendor ID
                   { $eq: ['$tenantId', tenantId] }, // Match on tenantId
                 ],
               },
             },
           },
         ],
-        as: 'vendorDetails',
+        as: 'jobDetails',
       },
     },
     {
       $unwind: {
-        path: '$vendorDetails',
+        path: '$jobDetails',
         preserveNullAndEmptyArrays: true, // Keep entries without a vendor assigned
       },
     },
     {
       $project: {
-        'vendorDetails.companyName': 1, // Only include companyName from vendor
+        'jobDetails._id': 1, // Include vendor ID
+        'jobDetails.jobNumber': 1, // Only include companyName from vendor
       },
     },
     {
       $group: {
         _id: null,
-        vendors: {
+        jobs: {
           $addToSet: {
-            $ifNull: [
-              '$vendorDetails.companyName', // Use vendor companyName if available
-              'Unassigned', // Fallback to 'Unassigned' if no vendor is assigned
-            ],
+            _id: { $ifNull: ['$jobDetails._id', null] }, // Use vendor ID if available, null otherwise
+            jobNumber: { $ifNull: ['$jobDetails.jobNumber', 'Unassigned'] }, // Use companyName or fallback to 'Unassigned'
           },
         },
       },
@@ -512,7 +509,7 @@ const getUniqueJobs = catchAsync(async (req, res) => {
   ]);
 
   res.send({
-    vendors: result[0]?.vendors || [],
+    jobs: result[0]?.jobs || [],
   });
 });
 

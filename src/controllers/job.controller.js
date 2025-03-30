@@ -176,8 +176,6 @@ const getJobs = catchAsync(async (req, res) => {
     filter.$or = [{ customer: { $exists: false } }, { customer: null }];
   }
 
-  console.log(filter);
-
   const result = await jobService.getJobs(filter, options);
 
   const populatedResult = await Job.populate(result.results, [
@@ -202,7 +200,7 @@ const getJobs = catchAsync(async (req, res) => {
       job.siteLocation = matchingSiteLocation || null;
     }
   }
-  console.log(populatedResult);
+
   res.send({
     results: populatedResult,
     totalResults: result.totalResults,
@@ -215,7 +213,7 @@ const getJob = catchAsync(async (req, res) => {
   const job = await jobService.getJobById(req.params.jobId);
 
   const populatedResult = await populateJob(job);
-  console.log(populatedResult);
+
   res.send(populatedResult);
 });
 
@@ -257,13 +255,13 @@ const removeCommentFromJob = catchAsync(async (req, res) => {
 });
 
 const addHoursToJob = catchAsync(async (req, res) => {
-  const { hours } = req.body;
+  const { hours, userId } = req.body;
   // Validate input
   if (hours < 0) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid Hours');
   }
 
-  const job = await jobService.addHoursToJob(req.params.jobId, hours);
+  const job = await jobService.addHoursToJob(req.params.jobId, userId, hours);
   const populatedResult = await populateJob(job);
 
   res.send(populatedResult);
@@ -300,7 +298,9 @@ const assignUserToJob = catchAsync(async (req, res) => {
 
 const deleteUserFromJob = catchAsync(async (req, res) => {
   const job = await jobService.deleteUserFromJob(req.params.jobId, req.body.userId);
-  res.send(job);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const addCustomerToJob = catchAsync(async (req, res) => {
@@ -414,8 +414,6 @@ const getUniqueAssignee = catchAsync(async (req, res) => {
     },
   ]);
 
-  console.log(result[0]?.assignees);
-
   res.status(200).json({ users: result[0]?.assignees || [] });
 });
 
@@ -467,8 +465,6 @@ const getUniqueCustomers = catchAsync(async (req, res) => {
       },
     },
   ]);
-
-  console.log(result);
 
   res.status(200).json({ customers: result });
 });
