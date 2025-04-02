@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { purchaseOrderService, pdfService, emailService } = require('../services');
 const { PurchaseOrder } = require('../models');
+const mongoose = require('mongoose'); // Ensure this is present!
 
 // Create a new purchase order
 const createPurchaseOrder = catchAsync(async (req, res) => {
@@ -53,7 +54,7 @@ const createPurchaseOrder = catchAsync(async (req, res) => {
 
 // Get all purchase orders with optional filters and pagination
 const getPurchaseOrders = catchAsync(async (req, res) => {
-  const { searchText, status } = req.query;
+  const { searchText, status, customer, jobID, vendor } = req.query;
   const filter = pick(req.query, ['vendor', 'status', 'customer', 'jobID']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // Assuming the logged-in user's ID is stored in req.user
@@ -82,10 +83,55 @@ const getPurchaseOrders = catchAsync(async (req, res) => {
     const searchRegex = new RegExp(searchText, 'i'); // Case-insensitive regex for search
     filter.$or = [
       { purchaseOrderNumber: searchRegex },
-      //{ 'vendor.companyName': searchRegex },
+      // { 'vendor.companyName': searchRegex },
       // { jobID: searchRegex },
       { 'items.itemName': searchRegex }, // Assuming `items` is an array with `itemName`
     ];
+  }
+
+  if (customer && customer.trim() !== '') {
+    // Ensure customer is not an empty string before checking ObjectId validity
+    if (mongoose.Types.ObjectId.isValid(customer)) {
+      filter.customer = new mongoose.Types.ObjectId(customer);
+    } else {
+      return res.status(400).json({ error: 'Invalid Customer ID' });
+    }
+  } else if (customer !== undefined && (customer === null || customer.trim() === '')) {
+    // Properly remove `customer` from the filter
+    delete filter.customer;
+
+    // Exclude empty string if it’s causing casting issues
+    filter.$or = [{ customer: { $exists: false } }, { customer: null }];
+  }
+
+  if (jobID && jobID.trim() !== '') {
+    // Ensure customer is not an empty string before checking ObjectId validity
+    if (mongoose.Types.ObjectId.isValid(jobID)) {
+      filter.jobID = new mongoose.Types.ObjectId(jobID);
+    } else {
+      return res.status(400).json({ error: 'Invalid Job ID' });
+    }
+  } else if (jobID !== undefined && (jobID === null || jobID.trim() === '')) {
+    // Properly remove `customer` from the filter
+    delete filter.jobID;
+
+    // Exclude empty string if it’s causing casting issues
+    filter.$or = [{ jobID: { $exists: false } }, { jobID: null }];
+  }
+
+  if (vendor && vendor.trim() !== '') {
+    // Ensure customer is not an empty string before checking ObjectId validity
+    if (mongoose.Types.ObjectId.isValid(vendor)) {
+      filter.vendor = new mongoose.Types.ObjectId(vendor);
+    } else {
+      return res.status(400).json({ error: 'Invalid vendor ID' });
+    }
+  } else if (vendor !== undefined && (vendor === null || vendor.trim() === '')) {
+    // Properly remove `customer` from the filter
+    delete filter.vendor;
+
+    // Exclude empty string if it’s causing casting issues
+    filter.$or = [{ vendor: { $exists: false } }, { vendor: null }];
   }
 
   const result = await purchaseOrderService.queryPurchaseOrders(filter, options);
@@ -96,7 +142,7 @@ const getPurchaseOrders = catchAsync(async (req, res) => {
     { path: 'requestedBy', select: 'id name profileUrl' },
     { path: 'approvedBy', select: 'id name profileUrl' },
     { path: 'Customer', select: 'id  businessName' },
-    // { path: 'jobID', select: 'jobTitle jobCode' },
+    { path: 'jobID', select: 'id jobNumber' },
   ]);
 
   // Respond with the results

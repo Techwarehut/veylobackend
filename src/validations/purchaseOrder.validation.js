@@ -86,7 +86,7 @@ const updateStatus = {
     status: Joi.string()
       .valid('Request', 'Approved', 'Issued', 'Rejected') // Status must be one of the allowed values
       .required(),
-    comment: Joi.string().optional(),
+    comment: Joi.string().optional().allow(''),
   }),
 };
 
