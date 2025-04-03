@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { Job } = require('../models');
 const ApiError = require('../utils/ApiError');
+const { getChecklistById } = require('./checklist.service');
 
 /**
  * Create a job
@@ -171,6 +172,29 @@ const addHoursToJob = async (jobId, userId, hours, notes = '') => {
   return job;
 };
 
+const addChecklistToJob = async (jobId, checklistID) => {
+  const checklist = await getChecklistById(checklistID);
+  if (!checklist) {
+    throw new Error('Checklist not found');
+  }
+
+  // Prepare checklist data to store in the Job
+  const checklistData = {
+    checklistId: checklist._id,
+    checklist_name: checklist.checklist_name,
+    tasks: checklist.tasks.map((task) => ({
+      task_name: task.task_name,
+      status: 'pending', // Default status for all tasks
+    })),
+  };
+  // Update the Job with the checklist
+  return updateJobById(jobId, { checklist: checklistData });
+};
+
+const deleteChecklistFromJob = async (jobId) => {
+  return updateJobById(jobId, { checklist: null });
+};
+
 module.exports = {
   createJob,
   getJobs,
@@ -191,4 +215,6 @@ module.exports = {
   addSiteToJob,
   deleteSiteFromJob,
   addHoursToJob,
+  addChecklistToJob,
+  deleteChecklistFromJob,
 };

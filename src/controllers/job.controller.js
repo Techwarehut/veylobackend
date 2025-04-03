@@ -339,13 +339,17 @@ const updateJobDueDate = catchAsync(async (req, res) => {
 });
 
 const addChecklistToJob = catchAsync(async (req, res) => {
-  const job = await jobService.addChecklistToJob(req.params.jobId, req.body.checklist);
-  res.send(job);
+  const job = await jobService.addChecklistToJob(req.params.jobId, req.body.checklistID);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const deleteChecklistFromJob = catchAsync(async (req, res) => {
-  const job = await jobService.deleteChecklistFromJob(req.params.jobId, req.body.checklistId);
-  res.send(job);
+  const job = await jobService.deleteChecklistFromJob(req.params.jobId);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const updateJobRecurrence = catchAsync(async (req, res) => {

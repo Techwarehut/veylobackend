@@ -91,7 +91,16 @@ const jobSchema = mongoose.Schema(
     comments: [commentSchema],
     hoursSpent: [hoursSpentSchema],
     images: [{ type: String }],
-    checklistID: { type: String },
+    checklist: {
+      checklistId: { type: mongoose.Schema.Types.ObjectId, ref: 'Checklist' },
+      checklist_name: { type: String, trim: true },
+      tasks: [
+        {
+          task_name: { type: String, required: true, trim: true },
+          status: { type: String, enum: ['pending', 'completed'], default: 'pending', trim: true },
+        },
+      ],
+    },
     recurrence: {
       type: jobRecurrenceSchema,
       default: () => ({
