@@ -35,51 +35,74 @@ const createJob = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tenant ID is required');
   }
 
-  // Step 1: Find the highest jobNumber for the tenantId
-  const lastJobNumber = await Job.findOne({ tenantId })
-    .sort({ jobNumber: -1 }) // Sort in descending order
-    .select('jobNumber') // Select only the field we need
-    .lean(); // Use lean to avoid fetching full Mongoose objects
+  const { checklistID, recurrence = {} } = req.body;
+  const { type, totalIterations = 1, dueDates = [] } = recurrence;
+  console.log('Before API Call', type, totalIterations, dueDates);
 
-  // Step 2: Generate the next jobNumber
-  let newJobNumber;
-  if (lastJobNumber && lastJobNumber.jobNumber) {
-    // Increment the last JobNumber by 1
-    newJobNumber = String(parseInt(lastJobNumber.jobNumber) + 1).padStart(4, '0'); // Ensure it's zero-padded to 4 digits
+  const jobs = [];
+
+  for (let i = 0; i < (type !== 'none' ? totalIterations : 1); i++) {
+    // Step 1: Find the highest jobNumber for the tenantId
+    const lastJobNumber = await Job.findOne({ tenantId })
+      .sort({ jobNumber: -1 }) // Sort in descending order
+      .select('jobNumber') // Select only the field we need
+      .lean(); // Use lean to avoid fetching full Mongoose objects
+
+    // Step 2: Generate the next jobNumber
+    let newJobNumber;
+    if (lastJobNumber && lastJobNumber.jobNumber) {
+      // Increment the last JobNumber by 1
+      newJobNumber = String(parseInt(lastJobNumber.jobNumber) + 1).padStart(4, '0'); // Ensure it's zero-padded to 4 digits
+    } else {
+      // If no job exists, start with '0001'
+      newJobNumber = '0001';
+    }
+
+    // Step 3: Add the new purchaseOrderNumber to the payload
+    const jobData = {
+      ...req.body,
+      tenantId,
+      jobNumber: newJobNumber,
+      reportedBy: req.user.id,
+      dueDate: type !== 'none' ? dueDates[i] || new Date() : req.body.dueDate,
+      recurrence: {
+        ...req.body.recurrence,
+        completedIterations: i + 1, // update based on iteration
+      },
+    };
+
+    let result = await jobService.createJob(jobData);
+
+    if (checklistID) result = await jobService.addChecklistToJob(result._id, checklistID);
+
+    const populatedResult = await Job.populate(result, [
+      { path: 'reportedBy', select: 'id name profileUrl' },
+      { path: 'assignedTo', select: 'id name profileUrl' },
+      { path: 'customer', select: 'id  businessName' },
+    ]);
+
+    // Step 2: Manually extract the correct `siteLocation` from the embedded array
+
+    if (populatedResult.customer && populatedResult.siteLocationId) {
+      const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
+
+      const matchingSiteLocation = customerDetails?.siteLocations?.find(
+        (location) => location._id.toString() === populatedResult.siteLocationId.toString()
+      );
+
+      // Assign detailed data to the new field
+      populatedResult.siteLocation = matchingSiteLocation || null;
+    }
+    jobs.push(populatedResult);
+  }
+
+  // Step 4: Return jobs
+  if (jobs.length === 1) {
+    return res.status(httpStatus.CREATED).send(jobs[0]);
   } else {
-    // If no job exists, start with '0001'
-    newJobNumber = '0001';
+    return res.status(httpStatus.CREATED).send(jobs);
   }
-
-  // Step 3: Add the new purchaseOrderNumber to the payload
-  const jobData = {
-    ...req.body,
-    tenantId,
-    jobNumber: newJobNumber,
-    reportedBy: req.user.id,
-  };
-  const result = await jobService.createJob(jobData);
-
-  const populatedResult = await Job.populate(result, [
-    { path: 'reportedBy', select: 'id name profileUrl' },
-    { path: 'assignedTo', select: 'id name profileUrl' },
-    { path: 'customer', select: 'id  businessName' },
-  ]);
-
-  // Step 2: Manually extract the correct `siteLocation` from the embedded array
-
-  if (populatedResult.customer && populatedResult.siteLocationId) {
-    const customerDetails = await customerService.getCustomerById(populatedResult.customer._id);
-
-    const matchingSiteLocation = customerDetails?.siteLocations?.find(
-      (location) => location._id.toString() === populatedResult.siteLocationId.toString()
-    );
-
-    // Assign detailed data to the new field
-    populatedResult.siteLocation = matchingSiteLocation || null;
-  }
-
-  res.status(httpStatus.CREATED).send(populatedResult);
+  //res.status(httpStatus.CREATED).send(populatedResult);
 });
 
 const getJobs = catchAsync(async (req, res) => {
@@ -213,6 +236,7 @@ const getJob = catchAsync(async (req, res) => {
   const job = await jobService.getJobById(req.params.jobId);
 
   const populatedResult = await populateJob(job);
+  console.log(populatedResult);
 
   res.send(populatedResult);
 });
@@ -347,6 +371,14 @@ const addChecklistToJob = catchAsync(async (req, res) => {
 
 const deleteChecklistFromJob = catchAsync(async (req, res) => {
   const job = await jobService.deleteChecklistFromJob(req.params.jobId);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
+});
+
+const toggleTaskStatus = catchAsync(async (req, res) => {
+  const { jobId, taskId } = req.params;
+  const job = await jobService.toggleTaskStatus(jobId, taskId);
   const populatedResult = await populateJob(job);
 
   res.send(populatedResult);
@@ -534,4 +566,5 @@ module.exports = {
   getUniqueAssignee,
   getUniqueCustomers,
   getUniqueLabels,
+  toggleTaskStatus,
 };

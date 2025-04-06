@@ -195,6 +195,24 @@ const deleteChecklistFromJob = async (jobId) => {
   return updateJobById(jobId, { checklist: null });
 };
 
+const toggleTaskStatus = async (jobId, taskId) => {
+  const job = await getJobById(jobId);
+
+  if (!job) {
+    throw new Error('Job not found.');
+  }
+
+  const task = job.checklist?.tasks.find((t) => t._id.toString() === taskId);
+  if (!task) {
+    throw new Error('Task not found.');
+  }
+
+  task.status = task.status === 'pending' ? 'completed' : 'pending';
+  await job.save();
+
+  return job;
+};
+
 module.exports = {
   createJob,
   getJobs,
@@ -217,4 +235,5 @@ module.exports = {
   addHoursToJob,
   addChecklistToJob,
   deleteChecklistFromJob,
+  toggleTaskStatus,
 };

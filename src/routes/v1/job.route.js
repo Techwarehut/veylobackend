@@ -65,6 +65,8 @@ router
   .post(auth('updateJobs'), validate(jobValidation.addChecklistToJob), jobController.addChecklistToJob)
   .delete(auth('updateJobs'), validate(jobValidation.deleteChecklistFromJob), jobController.deleteChecklistFromJob);
 
+router.route('/:jobId/checklist/task/:taskId/toggle').patch(auth('updateJobs'), jobController.toggleTaskStatus);
+
 router
   .route('/:jobId/recurrence')
   .patch(auth('updateJobs'), validate(jobValidation.updateJobRecurrence), jobController.updateJobRecurrence);
