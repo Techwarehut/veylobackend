@@ -16,8 +16,6 @@ if (config.env === 'development') {
       // Get the tenantId from the request user (assuming it's in req.user.tenantID)
       const tenantId = req.user.tenantID.toString();
 
-      console.log('Tenant ID:', tenantId, 'Type:', typeof tenantId);
-
       if (!tenantId) {
         return cb(new Error('Tenant ID is missing'), null);
       }
@@ -41,7 +39,6 @@ if (config.env === 'development') {
     },
   });
 } else {
-  console.log('I am not in dev');
   // Cloud storage for production (DigitalOcean Spaces - S3 compatible)
   const s3 = new S3Client({
     region: process.env.DIGITALOCEAN_REGION,

@@ -390,13 +390,34 @@ const updateJobRecurrence = catchAsync(async (req, res) => {
 });
 
 const addImageToJob = catchAsync(async (req, res) => {
-  const job = await jobService.addImageToJob(req.params.jobId, req.body.imageUrl);
-  res.send(job);
+  const { jobId } = req.params;
+  const files = req.files;
+
+  if (!files || files.length === 0) {
+    return res.status(400).json({ message: 'No images uploaded.' });
+  }
+
+  // Save image info to DB or cloud storage
+  const imageUrls = files.map((file) => file.path); // or file.location if you're using something like multer-s3
+
+  const job = await jobService.addImageToJob(jobId, imageUrls);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const deleteImageFromJob = catchAsync(async (req, res) => {
-  const job = await jobService.deleteImageFromJob(req.params.jobId, req.body.imageId);
-  res.send(job);
+  const { jobId } = req.params; // Extract jobId from the URL params
+  const { imageUrl } = req.body; // The URL of the image to delete, sent in the body
+
+  if (!imageUrl) {
+    return res.status(400).json({ message: 'Image URL is required' });
+  }
+
+  const job = await jobService.deleteImageFromJob(jobId, imageUrl);
+  const populatedResult = await populateJob(job);
+
+  res.send(populatedResult);
 });
 
 const getUniqueAssignee = catchAsync(async (req, res) => {

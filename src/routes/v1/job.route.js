@@ -3,6 +3,7 @@ const auth = require('../../middlewares/auth');
 const validate = require('../../middlewares/validate');
 const jobValidation = require('../../validations/job.validation');
 const jobController = require('../../controllers/job.controller');
+const upload = require('../../middlewares/storage');
 
 const router = express.Router();
 
@@ -73,9 +74,13 @@ router
 
 router
   .route('/:jobId/images')
-  .post(auth('updateJobsAllowed'), validate(jobValidation.addImageToJob), jobController.addImageToJob)
-  .delete(auth('updateJobsAllowed'), validate(jobValidation.deleteImageFromJob), jobController.deleteImageFromJob);
+  .post(
+    auth('updateJobsAllowed'),
+    upload.array('images', 5), // Adjust field name & max count as needed
 
+    jobController.addImageToJob
+  )
+  .delete(auth('updateJobsAllowed'), jobController.deleteImageFromJob);
 // Endpoint to fetch unique customers and vendors
 router.route('/unique/customers').get(auth('getJobs'), jobController.getUniqueCustomers);
 

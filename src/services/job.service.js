@@ -213,6 +213,48 @@ const toggleTaskStatus = async (jobId, taskId) => {
   return job;
 };
 
+const addImageToJob = async (jobId, imageUrls) => {
+  try {
+    const job = await getJobById(jobId);
+
+    if (!job) {
+      throw new Error('Job not found.');
+    }
+
+    job.images = [...(job.images || []), ...imageUrls];
+    await job.save();
+
+    return job;
+  } catch (error) {
+    throw new Error('Error updating images');
+  }
+};
+
+const deleteImageFromJob = async (jobId, imageUrl) => {
+  try {
+    const job = await getJobById(jobId);
+
+    if (!job) {
+      throw new Error('Job not found.');
+    }
+
+    // Now, delete the image from storage (e.g., from S3 or local filesystem)
+    /* const isImageDeleted = await S3Service.deleteImage(imageUrl); // Assuming you have a service for S3 image deletion
+
+    if (!isImageDeleted) {
+      return res.status(500).json({ message: 'Failed to delete image from storage' });
+    } */
+
+    // Remove the imageUrl from the job.images array
+    job.images = job.images.filter((image) => image !== imageUrl);
+    await job.save();
+
+    return job;
+  } catch (error) {
+    throw new Error('Error updating images');
+  }
+};
+
 module.exports = {
   createJob,
   getJobs,
@@ -236,4 +278,6 @@ module.exports = {
   addChecklistToJob,
   deleteChecklistFromJob,
   toggleTaskStatus,
+  addImageToJob,
+  deleteImageFromJob,
 };
