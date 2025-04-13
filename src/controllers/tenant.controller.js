@@ -27,6 +27,7 @@ const uploadBusinessLogo = async (req, res) => {
   }
 
   try {
+    console.log('req file ', req.file);
     // Determine file URL (Cloud Storage or Local)
     const logoUrl = req.file.location || `uploads/${tenantId}/${req.file.filename}`;
 

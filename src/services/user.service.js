@@ -80,6 +80,16 @@ const deleteUserById = async (userId) => {
   return user;
 };
 
+const updateUserProfilePicById = async (userId, profileUrl) => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
+  }
+  user.profileUrl = profileUrl;
+  await user.save();
+  return user;
+};
+
 module.exports = {
   createUser,
   queryUsers,
@@ -87,4 +97,5 @@ module.exports = {
   getUserByEmail,
   updateUserById,
   deleteUserById,
+  updateUserProfilePicById,
 };

@@ -60,6 +60,7 @@ const getJobs = {
     sortBy: Joi.string().optional(), // Sorting field
     limit: Joi.number().integer().optional(), // Pagination limit
     page: Joi.number().integer().optional(), // Pagination page
+    due: Joi.boolean().optional(),
   }),
 };
 

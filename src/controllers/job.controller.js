@@ -106,7 +106,7 @@ const createJob = catchAsync(async (req, res) => {
 });
 
 const getJobs = catchAsync(async (req, res) => {
-  const { searchText, status, jobType, assignedTo, label, customer } = req.query;
+  const { searchText, status, jobType, assignedTo, label, customer, due } = req.query;
   const filter = pick(req.query, ['assignedTo', 'label', 'customer', 'jobType', 'status']);
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   // Assuming the logged-in user's ID is stored in req.user
@@ -114,11 +114,16 @@ const getJobs = catchAsync(async (req, res) => {
   filter.tenantId = req.user.tenantID;
 
   // Add filter to ensure only jobs assigned  to the user are returned
-  if (req.user.role === 'member') filter.assignedTo = userId;
+  if (req.user.role === 'member') {
+    filter.assignedTo = userId;
+    filter.status = { $in: ['Backlog', 'In Progress', 'On Hold'] };
+  }
 
   if (!options.sortBy) {
     options.sortBy = 'dueDate priority -createdAt'; // Default sorting order
   }
+
+  if (due) filter.dueDate = { $lte: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) };
 
   /* // Convert the sortBy string into a MongoDB sort object
     const sortFields = options.sortBy.split(' ');
@@ -212,6 +217,7 @@ const getJobs = catchAsync(async (req, res) => {
   // Step 2: Manually extract the correct `siteLocation` from the embedded array
 
   for (const job of populatedResult) {
+    console.log(job.status);
     if (job.customer && job.siteLocationId) {
       const customerDetails = await customerService.getCustomerById(job.customer._id);
 
@@ -254,7 +260,17 @@ const deleteJob = catchAsync(async (req, res) => {
 });
 
 const updateJobStatus = catchAsync(async (req, res) => {
-  const job = await jobService.updateJobStatus(req.params.jobId, req.body.status);
+  const { user } = req;
+  const { status } = req.body;
+  console.log(status);
+  const allowedMemberStatuses = ['In Progress', 'On Hold', 'Approval Pending'];
+
+  if (user.role === 'member') {
+    if (!allowedMemberStatuses.includes(status)) {
+      return res.status(403).json({ message: 'You are not allowed to set this status.' });
+    }
+  }
+  const job = await jobService.updateJobStatus(req.params.jobId, status);
   // Use the reusable populate function with siteLocation logic included
   const populatedResult = await populateJob(job);
 
@@ -391,14 +407,19 @@ const updateJobRecurrence = catchAsync(async (req, res) => {
 
 const addImageToJob = catchAsync(async (req, res) => {
   const { jobId } = req.params;
+  const tenantId = req.user.tenantID;
   const files = req.files;
 
   if (!files || files.length === 0) {
     return res.status(400).json({ message: 'No images uploaded.' });
   }
 
+  // Determine file URL (Cloud Storage or Local)
+  //const logoUrl = req.file.location || `uploads/${tenantId}/${req.file.filename}`;
+  console.log(files);
+
   // Save image info to DB or cloud storage
-  const imageUrls = files.map((file) => file.path); // or file.location if you're using something like multer-s3
+  const imageUrls = files.map((file) => file.location || `uploads/${tenantId}/${file.filename}`); // or file.location if you're using something like multer-s3
 
   const job = await jobService.addImageToJob(jobId, imageUrls);
   const populatedResult = await populateJob(job);

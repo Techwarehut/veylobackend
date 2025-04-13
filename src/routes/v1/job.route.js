@@ -20,7 +20,7 @@ router
 
 router
   .route('/:jobId/status')
-  .patch(auth('updateJobs'), validate(jobValidation.updateJobStatus), jobController.updateJobStatus);
+  .patch(auth('updateJobsAllowed'), validate(jobValidation.updateJobStatus), jobController.updateJobStatus);
 
 router
   .route('/customer/:customerId')

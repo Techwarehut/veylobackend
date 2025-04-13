@@ -76,10 +76,36 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const uploadProfilePic = async (req, res) => {
+  const tenantId = req.user.tenantID;
+  if (!req.file) {
+    console.error('Multer did not process the file. req.file is undefined.');
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    // Determine file URL (Cloud Storage or Local)
+    const profileUrl = req.file.location || `uploads/${tenantId}/${req.file.filename}`;
+
+    const user = await userService.updateUserProfilePicById(req.params.userId, profileUrl);
+
+    res.send(user);
+
+    /*  return res.status(200).json({
+      message: 'Prfile Pic uploaded successfully',
+      profileUrl: user.profileUrl,
+    }); */
+  } catch (error) {
+    console.error('Error processing file upload:', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   createUser,
   getUsers,
   getUser,
   updateUser,
   deleteUser,
+  uploadProfilePic,
 };
