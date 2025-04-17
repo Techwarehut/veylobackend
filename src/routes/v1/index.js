@@ -10,6 +10,7 @@ const checklistRoute = require('./checklist.route');
 const jobtypesRoute = require('./jobtypes.route');
 const jobRoute = require('./job.route');
 const dashboardRoute = require('./dashboard.route');
+const subscriptionRoute = require('./subscription.route');
 const config = require('../../config/config');
 
 const router = express.Router();
@@ -54,6 +55,10 @@ const defaultRoutes = [
   {
     path: '/dashboard',
     route: dashboardRoute,
+  },
+  {
+    path: '/subscriptions', // ⬅️ Add this
+    route: subscriptionRoute,
   },
 ];
 

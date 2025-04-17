@@ -55,6 +55,7 @@ const allRoles = {
     'updateJobsAllowed',
     'manageUsersAllowed',
     'viewDashboard',
+    'createSubscription',
   ],
   admin: [
     'getUsers',
@@ -74,6 +75,7 @@ const allRoles = {
     'getChecklists',
     'manageUsersAllowed',
     'viewDashboard',
+    'createSubscription',
   ],
 };
 

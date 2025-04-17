@@ -8,3 +8,4 @@ module.exports.checklistController = require('./checklist.controller');
 module.exports.jobtypesController = require('./jobtypes.controller');
 module.exports.jobController = require('./job.controller');
 module.exports.dashboardController = require('./dashboard.controller');
+module.exports.subscriptionController = require('./subscription.controller');

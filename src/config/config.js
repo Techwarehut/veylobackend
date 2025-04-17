@@ -2,8 +2,10 @@ const dotenv = require('dotenv');
 const path = require('path');
 const Joi = require('joi');
 
+// Load environment variables from the .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
+// Define the schema for validating environment variables
 const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
@@ -23,15 +25,20 @@ const envVarsSchema = Joi.object()
     SMTP_USERNAME: Joi.string().description('username for email server'),
     SMTP_PASSWORD: Joi.string().description('password for email server'),
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
+    STRIPE_SECRET_KEY: Joi.string().required().description('Stripe secret key'),
+    FRONTEND_URL: Joi.string().uri().required().description('Frontend base URL'),
   })
   .unknown();
 
+// Validate environment variables against the schema
 const { value: envVars, error } = envVarsSchema.prefs({ errors: { label: 'key' } }).validate(process.env);
 
+// If there’s an error, throw an exception
 if (error) {
   throw new Error(`Config validation error: ${error.message}`);
 }
 
+// Export the validated configuration
 module.exports = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
@@ -61,4 +68,8 @@ module.exports = {
     },
     from: envVars.EMAIL_FROM,
   },
+  stripe: {
+    secretKey: envVars.STRIPE_SECRET_KEY, // Separate Stripe configuration
+  },
+  frontendUrl: envVars.FRONTEND_URL, // Frontend URL
 };
