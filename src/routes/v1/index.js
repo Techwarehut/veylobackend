@@ -9,6 +9,7 @@ const tenantRoute = require('./tenant.route');
 const checklistRoute = require('./checklist.route');
 const jobtypesRoute = require('./jobtypes.route');
 const jobRoute = require('./job.route');
+const dashboardRoute = require('./dashboard.route');
 const config = require('../../config/config');
 
 const router = express.Router();
@@ -49,6 +50,10 @@ const defaultRoutes = [
   {
     path: '/jobs',
     route: jobRoute,
+  },
+  {
+    path: '/dashboard',
+    route: dashboardRoute,
   },
 ];
 

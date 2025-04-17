@@ -8,6 +8,7 @@ const allRoles = {
     'getJobs',
     'updateJobsAllowed',
     'manageUsersAllowed',
+    'viewDashboard',
   ],
   lead: [
     'getUsers',
@@ -27,6 +28,7 @@ const allRoles = {
 
     'updateJobsAllowed',
     'manageUsersAllowed',
+    'viewDashboard',
   ],
   owner: [
     'getUsers',
@@ -52,6 +54,7 @@ const allRoles = {
     'deleteJobs',
     'updateJobsAllowed',
     'manageUsersAllowed',
+    'viewDashboard',
   ],
   admin: [
     'getUsers',
@@ -70,6 +73,7 @@ const allRoles = {
     'manageChecklists',
     'getChecklists',
     'manageUsersAllowed',
+    'viewDashboard',
   ],
 };
 

@@ -123,7 +123,12 @@ const getJobs = catchAsync(async (req, res) => {
     options.sortBy = 'dueDate priority -createdAt'; // Default sorting order
   }
 
-  if (due) filter.dueDate = { $lte: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) };
+  if (due) {
+    filter.dueDate = { $lte: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000) };
+    if (req.user.role !== 'member') {
+      filter.$or = [{ assignedTo: userId }, { status: { $in: ['Approval Pending', 'On Hold'] } }];
+    }
+  }
 
   /* // Convert the sortBy string into a MongoDB sort object
     const sortFields = options.sortBy.split(' ');
