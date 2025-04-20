@@ -14,6 +14,7 @@ const routes = require('./routes/v1');
 const { errorConverter, errorHandler } = require('./middlewares/error');
 const ApiError = require('./utils/ApiError');
 const path = require('path');
+const webhookRoute = require('./routes/v1/webhook.route');
 
 const app = express();
 
@@ -24,6 +25,9 @@ if (config.env !== 'test') {
 
 // set security HTTP headers
 app.use(helmet());
+
+// Stripe webhook (⚠️ needs raw body, must come before express.json())
+app.use('/v1/webhook', express.raw({ type: 'application/json' }), webhookRoute);
 
 // parse json request body
 app.use(express.json());

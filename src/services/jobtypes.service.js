@@ -102,6 +102,7 @@ const updateJobTypes = async (tenantId, jobTypes) => {
  * @returns {Promise<JobTypes>}
  */
 const createDefaultJobTypesForTenant = async (tenantId, defaultJobTypes) => {
+  console.log(tenantId, defaultJobTypes);
   const jobType = await JobTypes.create({
     tenantId,
     job_types: defaultJobTypes,

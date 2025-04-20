@@ -10,13 +10,7 @@ const ApiError = require('../utils/ApiError');
 const createTenant = async (tenantBody) => {
   try {
     // Ensure all required fields are provided and valid
-    if (
-      !tenantBody.businessName ||
-      !tenantBody.businessEmail ||
-      !tenantBody.currency ||
-      !tenantBody.subscriptionStartDate ||
-      !tenantBody.subscriptionEndDate
-    ) {
+    if (!tenantBody.businessName || !tenantBody.businessEmail || !tenantBody.currency) {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Missing required fields for tenant creation');
     }
 
@@ -31,6 +25,8 @@ const createTenant = async (tenantBody) => {
 
     return tenant;
   } catch (error) {
+    console.error('Error creating tenant:', error.stack || error);
+
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create tenant');
   }
 };

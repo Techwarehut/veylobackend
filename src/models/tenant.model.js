@@ -83,7 +83,7 @@ const tenantSchema = mongoose.Schema(
     },
 
     /** References to Other Models **/
-    subscription: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription' }, // Reference to Subscription model
+    subscription: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', default: null }, // Reference to Subscription model
     //checklists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Checklist' }], // Reference to multiple checklists
   },
   {

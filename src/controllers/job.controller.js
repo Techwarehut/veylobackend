@@ -37,7 +37,6 @@ const createJob = catchAsync(async (req, res) => {
 
   const { checklistID, recurrence = {} } = req.body;
   const { type, totalIterations = 1, dueDates = [] } = recurrence;
-  console.log('Before API Call', type, totalIterations, dueDates);
 
   const jobs = [];
 
@@ -222,7 +221,6 @@ const getJobs = catchAsync(async (req, res) => {
   // Step 2: Manually extract the correct `siteLocation` from the embedded array
 
   for (const job of populatedResult) {
-    console.log(job.status);
     if (job.customer && job.siteLocationId) {
       const customerDetails = await customerService.getCustomerById(job.customer._id);
 
@@ -247,7 +245,6 @@ const getJob = catchAsync(async (req, res) => {
   const job = await jobService.getJobById(req.params.jobId);
 
   const populatedResult = await populateJob(job);
-  console.log(populatedResult);
 
   res.send(populatedResult);
 });
@@ -267,7 +264,7 @@ const deleteJob = catchAsync(async (req, res) => {
 const updateJobStatus = catchAsync(async (req, res) => {
   const { user } = req;
   const { status } = req.body;
-  console.log(status);
+
   const allowedMemberStatuses = ['In Progress', 'On Hold', 'Approval Pending'];
 
   if (user.role === 'member') {
@@ -421,7 +418,6 @@ const addImageToJob = catchAsync(async (req, res) => {
 
   // Determine file URL (Cloud Storage or Local)
   //const logoUrl = req.file.location || `uploads/${tenantId}/${req.file.filename}`;
-  console.log(files);
 
   // Save image info to DB or cloud storage
   const imageUrls = files.map((file) => file.location || `uploads/${tenantId}/${file.filename}`); // or file.location if you're using something like multer-s3

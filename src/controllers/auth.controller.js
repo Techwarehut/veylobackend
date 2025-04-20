@@ -1,8 +1,9 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
-const { authService, userService, tokenService, emailService, tenantService } = require('../services');
+const { authService, userService, tokenService, emailService, tenantService, jobtypesService } = require('../services');
 const ApiError = require('../utils/ApiError');
 const logger = require('../config/logger');
+const subscriptionService = require('../services/subscription.service');
 
 /* const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
@@ -20,19 +21,12 @@ const register = catchAsync(async (req, res) => {
   // Get today's date
   const today = new Date();
 
-  // Calculate 30 days from today
-  const subscriptionStartDate = today;
-  const subscriptionEndDate = new Date(today);
-  subscriptionEndDate.setDate(today.getDate() + 30); // 30 days from today
-
   // Step 1: Create the tenant
 
   const tenantData = {
     businessName: businessName, // Business name during registration
     businessEmail: email, // Business email
     currency: currency, // Currency
-    subscriptionStartDate: subscriptionStartDate, // Start date for subscription
-    subscriptionEndDate: subscriptionEndDate, // End date for subscription
 
     businessBillingAddress: {
       country: country, // Country is inside the businessBillingAddress object
@@ -45,7 +39,7 @@ const register = catchAsync(async (req, res) => {
 
   // Step 2: Add default job types for the newly created tenant
   const defaultJobTypes = ['Inspection', 'Service', 'Maintenance', 'Support'];
-  await jobTypeService.createDefaultJobTypesForTenant(tenant._id, defaultJobTypes);
+  await jobtypesService.createDefaultJobTypesForTenant(tenant._id, defaultJobTypes);
 
   // Step 2: Create the user and associate with the tenant
   const userData = {
@@ -58,6 +52,33 @@ const register = catchAsync(async (req, res) => {
   let user;
 
   user = await userService.createUser(userData);
+
+  const { subscriptionId, customerId, trialEndsAt } = await subscriptionService.createTrialSubscription(
+    name,
+    email,
+    'price_1REanY2LrCWcY5jGvulyNA23',
+    tenant._id.toString()
+  );
+
+  const subscription = await subscriptionService.createSubscription({
+    tenant: tenant._id,
+    stripeSubscriptionId: subscriptionId,
+    customerId: customerId,
+    planType: 'Core',
+    subscriptionStartDate: today,
+    subscriptionEndDate: new Date(trialEndsAt * 1000), // Or subscription.current_period_end from Stripe
+    trialStartDate: today,
+    trialEndDate: new Date(trialEndsAt * 1000),
+    status: 'trialing',
+    currency: currency,
+  });
+
+  console.log(subscription);
+  // ✅ Update tenant with subscription reference
+  tenant.subscription = subscription._id;
+  await tenant.save();
+
+  await tenant.populate('subscription');
 
   // Step 3: Generate auth tokens for the user
   const tokens = await tokenService.generateAuthTokens(user);
