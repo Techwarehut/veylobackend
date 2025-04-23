@@ -2,7 +2,7 @@ const passport = require('passport');
 const httpStatus = require('http-status');
 const ApiError = require('../utils/ApiError');
 const { roleRights } = require('../config/roles');
-const tenantIdCheck = require('./tenantidCheck');
+const { Subscription } = require('../models');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
@@ -16,6 +16,18 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
     if (!hasRequiredRights && req.params.userId !== user.id) {
       return reject(new ApiError(httpStatus.FORBIDDEN, 'Forbidden'));
     }
+  }
+
+  // Fetch the tenant's subscription to check the subscription status
+  const subscription = await Subscription.findOne({ tenant: user.tenantID });
+  if (!subscription) {
+    return reject(new ApiError(httpStatus.FORBIDDEN, 'No active subscription found.'));
+  }
+
+  // Check if subscription is not canceled or inactive
+  const validSubscriptionStatuses = ['active', 'trialing']; // You can add other valid statuses here if needed
+  if (!validSubscriptionStatuses.includes(subscription.status)) {
+    return reject(new ApiError(httpStatus.FORBIDDEN, 'Subscription is not active.'));
   }
 
   resolve();

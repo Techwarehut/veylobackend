@@ -25,8 +25,12 @@ const createTenant = async (tenantBody) => {
 
     return tenant;
   } catch (error) {
-    console.error('Error creating tenant:', error.stack || error);
+    // Re-throw custom errors
+    if (error instanceof ApiError) {
+      throw error;
+    }
 
+    // Otherwise, wrap in internal server error
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create tenant');
   }
 };
@@ -50,7 +54,7 @@ const queryTenants = async (filter, options) => {
  * @returns {Promise<Tenant>}
  */
 const getTenantById = async (id) => {
-  return Tenant.findById(id);
+  return Tenant.findById(id).populate('subscription');
 };
 
 /**

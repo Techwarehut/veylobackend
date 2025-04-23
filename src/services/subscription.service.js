@@ -63,10 +63,26 @@ const createTrialSubscription = async (name, email, price, tenantId) => {
     },
   });
 
+  const session = await stripe.checkout.sessions.create({
+    mode: 'setup', // collect payment method only
+    customer: customer.id,
+
+    setup_intent_data: {
+      metadata: {
+        subscriptionId: subscription.id,
+        tenantId: tenantId,
+      },
+    },
+    success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.frontendUrl}/cancel`,
+    currency: 'usd',
+  });
+
   return {
     subscriptionId: subscription.id,
     customerId: customer.id,
     trialEndsAt: subscription.trial_end,
+    paymentURL: session.url,
   };
 };
 
@@ -75,8 +91,53 @@ const createSubscription = async (subscriptionData) => {
   return subscription;
 };
 
+const getSubscriptionById = async (id) => {
+  return Subscription.findById(id);
+};
+
+const updateSubscriptionStatusById = async (subscriptionId, status, reactivationUrl) => {
+  const subscription = await getSubscriptionById(subscriptionId);
+  if (!subscription) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Subscription not found');
+  }
+
+  // Logic to handle different statuses
+  switch (status) {
+    case 'cancelled':
+      subscription.status = 'cancelled';
+      subscription.canceledAt = new Date();
+      subscription.cancelAtPeriodEnd = true;
+      subscription.paymentURL = reactivationUrl;
+      break;
+
+    case 'active':
+      subscription.status = 'active';
+      // Set subscription start and end dates based on the current date
+      subscription.subscriptionStartDate = new Date();
+      // Assuming 30-day billing cycle; adjust based on your business logic
+      subscription.subscriptionEndDate = new Date(subscription.subscriptionStartDate);
+      subscription.subscriptionEndDate.setDate(subscription.subscriptionStartDate.getDate() + 30);
+
+      // Optionally, update trial dates (though these are not strictly necessary once active)
+      subscription.trialStartDate = null;
+      subscription.trialEndDate = null;
+      subscription.paymentStatus = 'Paid';
+      // Optionally, you can reset some fields or set new trial/end dates if necessary
+      break;
+
+    // Add more statuses if needed (e.g., past_due, incomplete, etc.)
+    default:
+      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid status update');
+  }
+  await subscription.save();
+
+  return subscription;
+};
+
 module.exports = {
   createCheckoutSession,
   createTrialSubscription,
   createSubscription,
+  getSubscriptionById,
+  updateSubscriptionStatusById,
 };

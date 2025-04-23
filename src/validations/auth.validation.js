@@ -6,9 +6,10 @@ const register = {
     email: Joi.string().required().email(),
     password: Joi.string().required().custom(password),
     name: Joi.string().required(),
-    businessName: Joi.string().required().min(3).max(100), // Add validation for businessName
+    businessName: Joi.string().required().min(1).max(100), // Add validation for businessName
     country: Joi.string().required().min(2).max(50), // Add validation for country
     currency: Joi.string().required().min(1).max(5),
+    planType: Joi.string().required(),
   }),
 };
 

@@ -4,6 +4,7 @@ const { authService, userService, tokenService, emailService, tenantService, job
 const ApiError = require('../utils/ApiError');
 const logger = require('../config/logger');
 const subscriptionService = require('../services/subscription.service');
+const { Tenant } = require('../models');
 
 /* const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
@@ -16,7 +17,7 @@ const subscriptionService = require('../services/subscription.service');
 
  */
 const register = catchAsync(async (req, res) => {
-  const { businessName, country, currency, name, email, password } = req.body;
+  const { businessName, country, currency, name, email, password, planType } = req.body;
 
   // Get today's date
   const today = new Date();
@@ -53,10 +54,16 @@ const register = catchAsync(async (req, res) => {
 
   user = await userService.createUser(userData);
 
-  const { subscriptionId, customerId, trialEndsAt } = await subscriptionService.createTrialSubscription(
+  let priceId;
+
+  if (planType === 'Start Up') priceId = 'price_1RH3OR2LrCWcY5jGDBEuAa4o';
+  else if (planType === 'Grow') priceId = 'price_1RH3Pa2LrCWcY5jGCrQxz3be';
+  else if (planType === 'Enterprise') priceId = 'price_1RH3Ql2LrCWcY5jGpIlpKgls';
+
+  const { subscriptionId, customerId, trialEndsAt, paymentURL } = await subscriptionService.createTrialSubscription(
     name,
     email,
-    'price_1REanY2LrCWcY5jGvulyNA23',
+    priceId,
     tenant._id.toString()
   );
 
@@ -64,19 +71,28 @@ const register = catchAsync(async (req, res) => {
     tenant: tenant._id,
     stripeSubscriptionId: subscriptionId,
     customerId: customerId,
-    planType: 'Core',
+    planType: planType,
+    priceId: priceId,
     subscriptionStartDate: today,
     subscriptionEndDate: new Date(trialEndsAt * 1000), // Or subscription.current_period_end from Stripe
     trialStartDate: today,
     trialEndDate: new Date(trialEndsAt * 1000),
     status: 'trialing',
+    paymentURL: paymentURL,
     currency: currency,
   });
 
-  console.log(subscription);
   // ✅ Update tenant with subscription reference
   tenant.subscription = subscription._id;
   await tenant.save();
+
+  const populatedTenant = await Tenant.populate(tenant, [
+    {
+      path: 'subscription',
+      select:
+        'planType status employeeCount customerId subscriptionStartDate subscriptionEndDate trialStartDate trialEndDate',
+    },
+  ]);
 
   await tenant.populate('subscription');
 
@@ -106,8 +122,12 @@ const register = catchAsync(async (req, res) => {
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
+
   const tokens = await tokenService.generateAuthTokens(user);
-  res.send({ user, tokens });
+
+  const tenant = await tenantService.getTenantById(user.tenantID);
+  console.log(tenant);
+  res.send({ user, tokens, tenant });
 });
 
 const logout = catchAsync(async (req, res) => {

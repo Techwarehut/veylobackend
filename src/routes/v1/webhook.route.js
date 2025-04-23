@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Stripe = require('stripe');
 const config = require('../../config/config');
+const subscriptionService = require('../../services/subscription.service');
 
 const stripe = Stripe(config.stripe.secretKey);
 
@@ -10,7 +11,6 @@ router.post(
   '/',
   express.raw({ type: 'application/json' }), // important!
   async (req, res) => {
-    console.log('I am in');
     const sig = req.headers['stripe-signature'];
     let event;
 
@@ -29,19 +29,79 @@ router.post(
 
     // Handle event
     switch (event.type) {
-      case 'checkout.session.completed':
-        const session = event.data.object;
-        console.log('✅ Checkout Session completed:', session);
-        // do something with session
+      case 'invoice.payment_succeeded':
+        const invoice = event.data.object;
+        const customerId = invoice.customer;
+        const subscriptionId = invoice.subscription;
+        const paymentStatus = invoice.payment_status;
+
+        // Retrieve subscription to get metadata
+        if (subscriptionId) {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const tenantId = subscription.metadata?.tenantId;
+
+          // 💾 Update your DB: mark tenant as active (or paid)
+          subscriptionService.updateSubscriptionStatusById(subscriptionId, 'active', '');
+        }
+
+        // ✉️ Send welcome email (custom logic)
+        // await sendWelcomeEmail(tenantId);
         break;
 
-      case 'invoice.paid':
-        console.log('💰 Invoice paid');
-        break;
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+        const subscriptionId = subscription.id;
 
-      case 'customer.subscription.created':
-        console.log('📦 Subscription created');
+        // Check if a payment method is already attached
+        const customer = await stripe.customers.retrieve(customerId);
+        const hasDefaultPaymentMethod = customer.invoice_settings?.default_payment_method;
+
+        if (!hasDefaultPaymentMethod) {
+          const tenantId = subscription.metadata?.tenantId;
+
+          // Send reminder email with a link to add payment method (Checkout Setup Mode)
+          //await sendTrialEndingEmail(tenantId, customerId);
+        }
+
         break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer;
+        const tenantId = subscription.metadata?.tenantId;
+
+        // ⬇️ Get the price ID user was subscribed to
+        const priceId = subscription.items.data[0].price.id;
+
+        // ⬇️ Reactivation link using that same price
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          customer: customerId,
+          line_items: [
+            {
+              price: priceId,
+              quantity: 1,
+            },
+          ],
+          success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${config.frontendUrl}/cancel`,
+          metadata: {
+            tenantId,
+          },
+        });
+
+        const reactivationUrl = session.url;
+
+        // 💾 Update your DB: mark tenant as active (or paid)
+        subscriptionService.updateSubscriptionStatusById(subscriptionId, 'cancelled', reactivationUrl);
+
+        // ✉️ Send email to reactivate
+        //await sendTrialEndedEmail(tenantId, reactivationUrl);
+
+        break;
+      }
 
       // Add more cases as needed
       default:
