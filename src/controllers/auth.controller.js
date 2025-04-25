@@ -126,7 +126,47 @@ const login = catchAsync(async (req, res) => {
   const tokens = await tokenService.generateAuthTokens(user);
 
   const tenant = await tenantService.getTenantById(user.tenantID);
-  console.log(tenant);
+  let paymentURL = tenant.subscription?.paymentURL;
+
+  // Check if trial is still ongoing and paymentURL needs to be refreshed
+  if (tenant.subscription?.status === 'trialing' && user.role === 'owner') {
+    const now = new Date();
+    const updatedAt = new Date(tenant.subscription.updatedAt);
+    const isExpired = now - updatedAt > 24 * 60 * 60 * 1000;
+
+    // OPTIONAL: check if payment method already exists to avoid regenerating session
+    const hasPaymentMethod = await subscriptionService.hasPaymentMethod(tenant.subscription.customerId);
+    if (!hasPaymentMethod && (!paymentURL || isExpired)) {
+      // Create new setup session
+      const URL = await subscriptionService.regenerateCheckoutSession(
+        tenant.subscription.customerId,
+        tenant.subscription.stripeSubscriptionId,
+        tenant.id.toString(),
+        'cad' //tenant.subscription.currency
+      );
+
+      // Update paymentURL in DB
+      tenant.subscription.paymentURL = URL;
+      await tenant.subscription.save();
+
+      //paymentURL = newSession.url;
+    } else if (hasPaymentMethod) {
+      // 💡 Generate Stripe Customer Portal URL
+      const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
+
+      tenant.subscription.paymentURL = URL;
+      tenant.subscription.status = 'payment attached'; // Optional: use another status like 'active' if it fits better
+      await tenant.subscription.save();
+    } else {
+      // 💡 Generate Stripe Customer Portal URL
+      const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
+
+      tenant.subscription.paymentURL = URL;
+      //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
+      await tenant.subscription.save();
+    }
+  }
+
   res.send({ user, tokens, tenant });
 });
 

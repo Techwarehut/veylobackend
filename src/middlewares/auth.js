@@ -25,7 +25,7 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
   }
 
   // Check if subscription is not canceled or inactive
-  const validSubscriptionStatuses = ['active', 'trialing']; // You can add other valid statuses here if needed
+  const validSubscriptionStatuses = ['active', 'trialing', 'payment attached', 'cancel scheduled']; // You can add other valid statuses here if needed
   if (!validSubscriptionStatuses.includes(subscription.status)) {
     return reject(new ApiError(httpStatus.FORBIDDEN, 'Subscription is not active.'));
   }

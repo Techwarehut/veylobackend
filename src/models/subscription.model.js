@@ -18,7 +18,7 @@ const subscriptionSchema = mongoose.Schema(
     trialEndDate: { type: Date }, // Optional trial end date
     status: {
       type: String,
-      enum: ['trialing', 'active', 'past_due', 'cancelled', 'incomplete'],
+      enum: ['trialing', 'active', 'past_due', 'cancelled', 'incomplete', 'payment attached', 'cancel scheduled'],
       default: 'trialing',
     },
     currency: { type: String, required: true },

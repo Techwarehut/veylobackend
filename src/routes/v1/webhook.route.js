@@ -29,6 +29,10 @@ router.post(
 
     // Handle event
     switch (event.type) {
+      // payment_method.attached
+      //checkout.session.completed
+      //billing_portal.session.created
+      //customer.subscription.updated
       case 'invoice.payment_succeeded':
         const invoice = event.data.object;
         const customerId = invoice.customer;
@@ -41,7 +45,7 @@ router.post(
           const tenantId = subscription.metadata?.tenantId;
 
           // 💾 Update your DB: mark tenant as active (or paid)
-          subscriptionService.updateSubscriptionStatusById(subscriptionId, 'active', '');
+          subscriptionService.updateSubscriptionStatusById(subscriptionId, 'active');
         }
 
         // ✉️ Send welcome email (custom logic)
@@ -95,10 +99,39 @@ router.post(
         const reactivationUrl = session.url;
 
         // 💾 Update your DB: mark tenant as active (or paid)
-        subscriptionService.updateSubscriptionStatusById(subscriptionId, 'cancelled', reactivationUrl);
+        subscriptionService.updateSubscriptionStatusById(subscriptionId, 'cancelled');
 
         // ✉️ Send email to reactivate
         //await sendTrialEndedEmail(tenantId, reactivationUrl);
+
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+
+        if (subscription.cancel_at_period_end) {
+          // Mark as "cancel scheduled"
+          subscriptionService.updateSubscriptionStatusById(subscription.id, 'cancel scheduled');
+        } else {
+          // Cancel was **reversed**, reactivated
+          await subscriptionService.updateSubscriptionStatusById(
+            subscription.id,
+            subscription.status // probably 'active'
+          );
+        }
+
+        break;
+      }
+
+      case 'payment_method.detached': {
+        const subscription = event.data.object;
+
+        // Cancel was **reversed**, reactivated
+        await subscriptionService.updateSubscriptionStatusById(
+          subscription.id,
+          subscription.status // probably 'active'
+        );
 
         break;
       }

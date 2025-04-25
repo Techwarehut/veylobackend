@@ -28,8 +28,6 @@ const createCheckoutSession = async ({ customerEmail, priceId }) => {
       cancel_url: `${config.frontendUrl}/cancel`,
     });
 
-    console.log(session);
-
     return {
       sessionId: session.id,
       subscriptionId: session.subscription,
@@ -41,8 +39,6 @@ const createCheckoutSession = async ({ customerEmail, priceId }) => {
 };
 
 const createTrialSubscription = async (name, email, price, tenantId) => {
-  console.log('logging just email', email);
-
   const customer = await stripe.customers.create({
     name: name,
     email: email,
@@ -75,8 +71,28 @@ const createTrialSubscription = async (name, email, price, tenantId) => {
     },
     success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${config.frontendUrl}/cancel`,
-    currency: 'usd',
+    currency: 'cad',
   });
+
+  /* // Create a PaymentIntent instead of a Checkout session
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: price, // Amount in cents
+    currency: 'usd',
+    customer: customer.id,
+    metadata: {
+      subscriptionId: subscription.id,
+      tenantId: tenantId,
+    },
+  });
+
+  // Generate a URL to handle payment using the PaymentIntent
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    customer: customer.id,
+    payment_intent: paymentIntent.id,
+    success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.frontendUrl}/cancel`,
+  }); */
 
   return {
     subscriptionId: subscription.id,
@@ -86,16 +102,55 @@ const createTrialSubscription = async (name, email, price, tenantId) => {
   };
 };
 
+const regenerateCheckoutSession = async (customerId, subscriptionId, tenantId, currency) => {
+  // Check if the session has expired (e.g., compare the creation timestamp)
+  const session = await stripe.checkout.sessions.create({
+    mode: 'setup',
+    customer: customerId,
+    setup_intent_data: {
+      metadata: {
+        subscriptionId: subscriptionId,
+        tenantId: tenantId,
+      },
+    },
+    success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.frontendUrl}/cancel`,
+    currency: currency,
+  });
+
+  return session.url; // Return the new payment URL
+};
+
+const getCustomerPortalUrl = async (customerId) => {
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: `${config.frontendUrl}/dashboard`, // wherever you want to redirect after they’re done
+  });
+
+  return session.url;
+};
+
 const createSubscription = async (subscriptionData) => {
   const subscription = await Subscription.create(subscriptionData);
   return subscription;
 };
 
-const getSubscriptionById = async (id) => {
-  return Subscription.findById(id);
+const getSubscriptionById = async (stripeSubscriptionId) => {
+  return Subscription.findOne({ stripeSubscriptionId });
 };
 
-const updateSubscriptionStatusById = async (subscriptionId, status, reactivationUrl) => {
+const hasPaymentMethod = async (customerId) => {
+  const existingPaymentMethods = await stripe.paymentMethods.list({
+    customer: customerId,
+    type: 'card',
+  });
+
+  const hasPaymentMethod = existingPaymentMethods.data.length > 0;
+
+  return hasPaymentMethod;
+};
+
+const updateSubscriptionStatusById = async (subscriptionId, status) => {
   const subscription = await getSubscriptionById(subscriptionId);
   if (!subscription) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Subscription not found');
@@ -107,7 +162,7 @@ const updateSubscriptionStatusById = async (subscriptionId, status, reactivation
       subscription.status = 'cancelled';
       subscription.canceledAt = new Date();
       subscription.cancelAtPeriodEnd = true;
-      subscription.paymentURL = reactivationUrl;
+
       break;
 
     case 'active':
@@ -126,8 +181,10 @@ const updateSubscriptionStatusById = async (subscriptionId, status, reactivation
       break;
 
     // Add more statuses if needed (e.g., past_due, incomplete, etc.)
+
     default:
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid status update');
+      subscription.status = status;
+      break;
   }
   await subscription.save();
 
@@ -140,4 +197,8 @@ module.exports = {
   createSubscription,
   getSubscriptionById,
   updateSubscriptionStatusById,
+  regenerateCheckoutSession,
+  hasPaymentMethod,
+
+  getCustomerPortalUrl,
 };
