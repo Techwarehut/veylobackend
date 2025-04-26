@@ -90,6 +90,10 @@ const updateUserProfilePicById = async (userId, profileUrl) => {
   return user;
 };
 
+const countUsersByTenantId = async (tenantId) => {
+  return User.countDocuments({ tenantID: tenantId });
+};
+
 module.exports = {
   createUser,
   queryUsers,
@@ -98,4 +102,5 @@ module.exports = {
   updateUserById,
   deleteUserById,
   updateUserProfilePicById,
+  countUsersByTenantId,
 };

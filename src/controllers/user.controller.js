@@ -29,6 +29,20 @@ const createUser = catchAsync(async (req, res) => {
       message: 'Tenant ID is required',
     });
   }
+
+  const tenant = await tenantService.getTenantById(tenantId);
+
+  //return erron if employCount already reached
+  // Check if employee count limit is reached
+  const currentUsers = await userService.countUsersByTenantId(tenantId);
+  const maxAllowed = tenant.subscription.employeeCount || 0;
+
+  if (currentUsers >= maxAllowed) {
+    return res.status(httpStatus.FORBIDDEN).send({
+      message: 'Employee limit reached for your subscription plan. Please Upgrade',
+    });
+  }
+
   // Generate a complex password
   const password = generateComplexPassword();
 
@@ -56,6 +70,10 @@ const getUsers = catchAsync(async (req, res) => {
   const result = await userService.queryUsers(filter, options);
 
   res.send(result);
+  /*  res.send({
+    count: result.results.length, // 👈 total number of users returned in this page
+    results: result.results, // 👈 the actual users
+  }); */
 });
 
 const getUser = catchAsync(async (req, res) => {
