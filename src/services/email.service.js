@@ -90,6 +90,8 @@ Additionally, download our mobile app from the links below to start using Veylo 
 - Download on iOS: ${downloadAppUrl} (iOS)
 - Download on Android: ${downloadAppUrl} (Android)
 
+Exclusive offer: use the coupon code VEYLOVISIONARY to get 80% off for your first year! Update your payment method and apply the code to take advantage of this special deal.
+
 If you have any questions or issues, feel free to reach out to our support team.
 
 Best regards,

@@ -37,10 +37,10 @@ const createUser = catchAsync(async (req, res) => {
   const currentUsers = await userService.countUsersByTenantId(tenantId);
   const maxAllowed = tenant.subscription.employeeCount || 0;
 
+  console.log(currentUsers, maxAllowed);
+
   if (currentUsers >= maxAllowed) {
-    return res.status(httpStatus.FORBIDDEN).send({
-      message: 'Employee limit reached for your subscription plan. Please Upgrade',
-    });
+    throw new ApiError(httpStatus.FORBIDDEN, 'Employee limit reached for your subscription plan. Please Upgrade');
   }
 
   // Generate a complex password

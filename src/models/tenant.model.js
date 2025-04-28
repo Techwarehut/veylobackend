@@ -10,7 +10,7 @@ const tenantSchema = mongoose.Schema(
     },
     businessLogo: {
       type: String,
-      default: 'https://via.placeholder.com/300x200?text=Logo+Placeholder',
+      default: '',
     },
     businessType: {
       type: String,

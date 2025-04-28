@@ -2,6 +2,9 @@ const httpStatus = require('http-status');
 const { Job } = require('../models');
 const ApiError = require('../utils/ApiError');
 const { getChecklistById } = require('./checklist.service');
+const moment = require('moment');
+const mongoose = require('mongoose');
+const { customerService } = require('../services');
 
 /**
  * Create a job
@@ -255,6 +258,108 @@ const deleteImageFromJob = async (jobId, imageUrl) => {
   }
 };
 
+const getJobsForCalendar = async (tenantId, selectedDate) => {
+  console.log('selectedDate:', selectedDate);
+
+  // Ensure tenantId is converted to ObjectId if it's not already
+  const tenantObjectId = mongoose.Types.ObjectId(tenantId);
+
+  // Ensure selectedDate is in a valid format (ISO 8601)
+  const formattedSelectedDate = moment(selectedDate, 'YYYY-MM-DD', true).isValid()
+    ? moment(selectedDate).startOf('day')
+    : null;
+
+  if (!formattedSelectedDate) {
+    throw new Error('Invalid selectedDate format');
+  }
+
+  // Calculate the range (selected date + 2 days)
+  const startDate = formattedSelectedDate; // Start of the selected date
+  const endDate = formattedSelectedDate.clone().add(2, 'days').endOf('day'); // End of the selected date + 2 days
+
+  // Query for jobs that have a dueDate within the range (selected date + 2 days)
+  let jobs = await Job.find({
+    tenantId: tenantObjectId,
+    dueDate: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+  });
+
+  jobs = await Job.populate(jobs, [
+    { path: 'reportedBy', select: 'id name profileUrl' },
+    { path: 'assignedTo', select: 'id name profileUrl' },
+    { path: 'customer', select: 'id  businessName' },
+  ]);
+
+  for (const job of jobs) {
+    if (job.customer && job.siteLocationId) {
+      const customerDetails = await customerService.getCustomerById(job.customer._id);
+
+      const matchingSiteLocation = customerDetails?.siteLocations?.find(
+        (location) => location._id.toString() === job.siteLocationId.toString()
+      );
+
+      // Assign detailed data to the new field
+      job.siteLocation = matchingSiteLocation || null;
+    }
+  }
+
+  // Now, ensure that at least one job exists for every day in the month for the selected date
+  const monthStart = formattedSelectedDate.clone().startOf('month'); // Start of the selected month
+  const monthEnd = formattedSelectedDate.clone().endOf('month'); // End of the selected month
+
+  let daysWithJobs = [];
+
+  // Loop through the entire month and ensure there's at least one job for each day
+  for (let date = monthStart; date.isBefore(monthEnd); date.add(1, 'day')) {
+    const dayJobs = await Job.find({
+      tenantId: tenantObjectId,
+      dueDate: { $gte: date.startOf('day').toDate(), $lte: date.endOf('day').toDate() },
+    });
+
+    daysWithJobs.push({
+      date: date.format('YYYY-MM-DD'),
+      hasJob: dayJobs.length > 0,
+    });
+  }
+
+  // Transform the jobs into a format that Agenda expects (grouped by date)
+  const items = {};
+
+  // Iterate over the jobs and group them by their due date
+  jobs.forEach((job) => {
+    const dueDate = moment(job.dueDate).format('YYYY-MM-DD'); // Format the dueDate as YYYY-MM-DD
+
+    if (!items[dueDate]) {
+      items[dueDate] = [];
+    }
+
+    items[dueDate].push({
+      id: job.id, // You can use job id or job number
+      jobNumber: job.jobNumber, // You can use job id or job number
+      jobTitle: job.jobTitle,
+      dueDate: job.dueDate, // Include full date if necessary
+      jobDescription: job.jobDescription,
+      priority: job.priority,
+      jobType: job.jobType,
+      assignedTo: job.assignedTo,
+      status: job.status,
+      customer: job.customer,
+      siteLocation: job.siteLocation,
+    });
+  });
+
+  // Ensure that there are empty arrays for dates where there are no jobs
+  daysWithJobs.forEach((day) => {
+    if (day.hasJob && !items[day.date]) {
+      items[day.date] = []; // Ensure the day exists in the items, even if no jobs
+    }
+  });
+
+  return {
+    items,
+    daysWithJobs,
+  };
+};
+
 module.exports = {
   createJob,
   getJobs,
@@ -280,4 +385,5 @@ module.exports = {
   toggleTaskStatus,
   addImageToJob,
   deleteImageFromJob,
+  getJobsForCalendar,
 };

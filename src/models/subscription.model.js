@@ -44,7 +44,7 @@ subscriptionSchema.pre('save', function (next) {
   if (this.isNew) {
     switch (this.planType) {
       case 'Start Up':
-        this.employeeCount = 4;
+        this.employeeCount = 5;
         break;
       case 'Grow':
         this.employeeCount = 15;

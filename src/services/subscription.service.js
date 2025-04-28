@@ -69,8 +69,8 @@ const createTrialSubscription = async (name, email, price, tenantId) => {
         tenantId: tenantId,
       },
     },
-    success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${config.frontendUrl}/cancel`,
+    success_url: `${config.frontendUrl}/dashboard`,
+    cancel_url: `${config.frontendUrl}`,
     currency: 'cad',
   });
 
@@ -113,7 +113,7 @@ const regenerateCheckoutSession = async (customerId, subscriptionId, tenantId, c
         tenantId: tenantId,
       },
     },
-    success_url: `${config.frontendUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${config.frontendUrl}/dashboard`,
     cancel_url: `${config.frontendUrl}/cancel`,
     currency: currency,
   });
@@ -191,6 +191,23 @@ const updateSubscriptionStatusById = async (subscriptionId, status) => {
   return subscription;
 };
 
+const handlePlanChange = async (subscriptionId, newPriceId) => {
+  const subscription = await getSubscriptionById(subscriptionId);
+  if (!subscription) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Subscription not found');
+  }
+  let planType;
+  if (newPriceId === 'price_1RH3OR2LrCWcY5jGDBEuAa4o') planType = 'Start Up';
+  else if (newPriceId === 'price_1RH3Pa2LrCWcY5jGCrQxz3be') planType = 'Grow';
+  else if (newPriceId === 'price_1RH3Ql2LrCWcY5jGpIlpKgls') planType = 'Enterprise';
+
+  subscription.planType = planType;
+
+  await subscription.save();
+
+  return subscription;
+};
+
 module.exports = {
   createCheckoutSession,
   createTrialSubscription,
@@ -199,6 +216,6 @@ module.exports = {
   updateSubscriptionStatusById,
   regenerateCheckoutSession,
   hasPaymentMethod,
-
+  handlePlanChange,
   getCustomerPortalUrl,
 };
