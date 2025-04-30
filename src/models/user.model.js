@@ -77,6 +77,11 @@ const userSchema = mongoose.Schema(
       type: Number,
       default: 0, // Default to 0 for completed jobs
     },
+    pushToken: {
+      type: String,
+      default: '', // Default to empty string if no token is set
+      trim: true,
+    },
   },
   {
     timestamps: true, // automatically adds createdAt and updatedAt fields

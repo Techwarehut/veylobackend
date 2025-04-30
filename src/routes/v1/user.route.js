@@ -19,6 +19,12 @@ router
   .delete(auth('manageUsers'), validate(userValidation.deleteUser), userController.deleteUser);
 
 router.route('/:userId/tenant').get(auth('getTenant'), validate(userValidation.getUser), userController.getTenantForUser);
+router.patch(
+  '/:userId/push-token',
+
+  validate(userValidation.updatePushToken),
+  userController.updatePushToken
+);
 
 router.patch(
   '/:userId/profile-pic',

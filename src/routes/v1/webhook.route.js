@@ -95,6 +95,7 @@ router.post(
         const subscription = event.data.object;
         const customerId = subscription.customer;
         const tenantId = subscription.metadata?.tenantId;
+        const subscriptionId = subscription.id;
 
         // ⬇️ Get the price ID user was subscribed to
         const priceId = subscription.items.data[0].price.id;

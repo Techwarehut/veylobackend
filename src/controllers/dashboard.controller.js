@@ -19,7 +19,7 @@ const getJobsForCalendar = catchAsync(async (req, res) => {
   const selectedDate = req.body.selectedDate; // Expecting date to filter jobs
 
   // Call the service to get the jobs
-  const jobsData = await jobService.getJobsForCalendar(tenantId, selectedDate);
+  const jobsData = await jobService.getJobsForCalendar(tenantId, selectedDate, role, userId);
 
   const items = jobsData.items;
 

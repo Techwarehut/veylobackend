@@ -12,3 +12,4 @@ module.exports.jobtypesService = require('./jobtypes.service');
 module.exports.jobService = require('./job.service');
 module.exports.dashboardService = require('./dashboard.service');
 module.exports.subscriptionService = require('./subscription.service');
+module.exports.notificationService = require('./notification.service');

@@ -60,10 +60,20 @@ const deleteUser = {
   }),
 };
 
+const updatePushToken = {
+  params: Joi.object().keys({
+    userId: Joi.string().required(),
+  }),
+  body: Joi.object().keys({
+    pushToken: Joi.string().required(),
+  }),
+};
+
 module.exports = {
   createUser,
   getUsers,
   getUser,
   updateUser,
   deleteUser,
+  updatePushToken,
 };

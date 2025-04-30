@@ -258,9 +258,7 @@ const deleteImageFromJob = async (jobId, imageUrl) => {
   }
 };
 
-const getJobsForCalendar = async (tenantId, selectedDate) => {
-  console.log('selectedDate:', selectedDate);
-
+const getJobsForCalendar = async (tenantId, selectedDate, role, userId) => {
   // Ensure tenantId is converted to ObjectId if it's not already
   const tenantObjectId = mongoose.Types.ObjectId(tenantId);
 
@@ -275,13 +273,50 @@ const getJobsForCalendar = async (tenantId, selectedDate) => {
 
   // Calculate the range (selected date + 2 days)
   const startDate = formattedSelectedDate; // Start of the selected date
-  const endDate = formattedSelectedDate.clone().add(2, 'days').endOf('day'); // End of the selected date + 2 days
+  const endDate = formattedSelectedDate.clone().add(7, 'days').endOf('day'); // End of the selected date + 2 days
 
-  // Query for jobs that have a dueDate within the range (selected date + 2 days)
-  let jobs = await Job.find({
+  const now = moment().startOf('day');
+  const isToday = formattedSelectedDate.isSame(now, 'day');
+
+  let filter = {
+    tenantId: tenantObjectId,
+  };
+
+  if (isToday) {
+    // Get all past due jobs and those within the next 2 days
+    filter.dueDate = { $lte: endDate.toDate() };
+  } else {
+    // Only get jobs within the selected 3-day window
+    filter.dueDate = {
+      $gte: formattedSelectedDate.toDate(),
+      $lte: endDate.toDate(),
+    };
+  }
+
+  // Build base filter
+  /* const filter = {
     tenantId: tenantObjectId,
     dueDate: { $gte: startDate.toDate(), $lte: endDate.toDate() },
-  });
+  }; */
+  /* const filter = {
+    tenantId: tenantObjectId,
+    dueDate: { $lte: endDate.toDate() }, // include everything up to endDate
+  }; */
+
+  // Add filter to ensure only jobs assigned to the user are returned if member
+  if (role === 'member') {
+    filter.assignedTo = userId;
+    filter.status = { $in: ['Backlog', 'In Progress', 'On Hold'] };
+  } else {
+    filter.status = { $in: ['Backlog', 'In Progress', 'On Hold', 'Approval Pending'] };
+  }
+
+  // Query for jobs that have a dueDate within the range (selected date + 2 days)
+  /* let jobs = await Job.find({
+    tenantId: tenantObjectId,
+    dueDate: { $gte: startDate.toDate(), $lte: endDate.toDate() },
+  }); */
+  let jobs = await Job.find(filter).sort('dueDate priority -createdAt');
 
   jobs = await Job.populate(jobs, [
     { path: 'reportedBy', select: 'id name profileUrl' },
@@ -325,7 +360,7 @@ const getJobsForCalendar = async (tenantId, selectedDate) => {
   const items = {};
 
   // Iterate over the jobs and group them by their due date
-  jobs.forEach((job) => {
+  /* jobs.forEach((job) => {
     const dueDate = moment(job.dueDate).format('YYYY-MM-DD'); // Format the dueDate as YYYY-MM-DD
 
     if (!items[dueDate]) {
@@ -337,6 +372,28 @@ const getJobsForCalendar = async (tenantId, selectedDate) => {
       jobNumber: job.jobNumber, // You can use job id or job number
       jobTitle: job.jobTitle,
       dueDate: job.dueDate, // Include full date if necessary
+      jobDescription: job.jobDescription,
+      priority: job.priority,
+      jobType: job.jobType,
+      assignedTo: job.assignedTo,
+      status: job.status,
+      customer: job.customer,
+      siteLocation: job.siteLocation,
+    });
+  }); */
+  jobs.forEach((job) => {
+    const jobDue = moment(job.dueDate);
+    const dueDate = jobDue.isSameOrBefore(startDate, 'day') ? startDate.format('YYYY-MM-DD') : jobDue.format('YYYY-MM-DD');
+
+    if (!items[dueDate]) {
+      items[dueDate] = [];
+    }
+
+    items[dueDate].push({
+      id: job.id,
+      jobNumber: job.jobNumber,
+      jobTitle: job.jobTitle,
+      dueDate: job.dueDate,
       jobDescription: job.jobDescription,
       priority: job.priority,
       jobType: job.jobType,

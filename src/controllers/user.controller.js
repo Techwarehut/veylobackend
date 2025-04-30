@@ -37,8 +37,6 @@ const createUser = catchAsync(async (req, res) => {
   const currentUsers = await userService.countUsersByTenantId(tenantId);
   const maxAllowed = tenant.subscription.employeeCount || 0;
 
-  console.log(currentUsers, maxAllowed);
-
   if (currentUsers >= maxAllowed) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Employee limit reached for your subscription plan. Please Upgrade');
   }
@@ -169,6 +167,14 @@ const uploadProfilePic = async (req, res) => {
   }
 };
 
+const updatePushToken = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { pushToken } = req.body;
+
+  const user = await userService.updateUserById(userId, { pushToken });
+  res.status(httpStatus.OK).send(user);
+});
+
 module.exports = {
   createUser,
   getUsers,
@@ -177,4 +183,5 @@ module.exports = {
   deleteUser,
   uploadProfilePic,
   getTenantForUser,
+  updatePushToken,
 };
