@@ -28,6 +28,7 @@ const envVarsSchema = Joi.object()
     STRIPE_SECRET_KEY: Joi.string().required().description('Stripe secret key'),
     FRONTEND_URL: Joi.string().uri().required().description('Frontend base URL'),
     STRIPE_WEBHOOK_SECRET: Joi.string().required().description('Stripe webhook secret'),
+    SENTRY_DSN: Joi.string().required().description('Sentry URL'),
   })
   .unknown();
 
@@ -74,4 +75,5 @@ module.exports = {
     webhookSecret: envVars.STRIPE_WEBHOOK_SECRET,
   },
   frontendUrl: envVars.FRONTEND_URL, // Frontend URL
+  sentryDsn: envVars.SENTRY_DSN,
 };

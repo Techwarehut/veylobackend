@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const ApiError = require('../utils/ApiError');
 const { tenantService } = require('../services');
+const logger = require('../config/logger');
 
 const getTenant = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
@@ -19,15 +20,14 @@ const updateTenant = catchAsync(async (req, res) => {
   res.send(tenant);
 });
 
-const uploadBusinessLogo = async (req, res) => {
+const uploadBusinessLogo = catchAsync(async (req, res) => {
   const tenantId = req.user.tenantID;
   if (!req.file) {
-    console.error('Multer did not process the file. req.file is undefined.');
+    logger.error('Multer did not process the file. req.file is undefined.');
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
   try {
-    console.log('req file ', req.file);
     // Determine file URL (Cloud Storage or Local)
     const logoUrl = req.file.location || `uploads/${tenantId}/${req.file.filename}`;
 
@@ -39,12 +39,12 @@ const uploadBusinessLogo = async (req, res) => {
       logoUrl: updatedTenant.businessLogo,
     });
   } catch (error) {
-    console.error('Error processing file upload:', error);
+    logger.error('Error processing file upload:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-};
+});
 
-const deleteLogo = async (req, res) => {
+const deleteLogo = catchAsync(async (req, res) => {
   try {
     const tenantId = req.user.tenantID;
 
@@ -56,10 +56,10 @@ const deleteLogo = async (req, res) => {
       message: 'Business logo deleted successfully',
     });
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     return res.status(500).json({ message: 'Error deleting logo', error: error.message });
   }
-};
+});
 
 module.exports = {
   getTenant,

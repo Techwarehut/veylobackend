@@ -2,6 +2,7 @@ const httpStatus = require('http-status');
 const { Tenant } = require('../models');
 const ApiError = require('../utils/ApiError');
 const subscriptionService = require('./subscription.service');
+const logger = require('../config/logger');
 
 /**
  * Create a tenant
@@ -90,17 +91,15 @@ const getTenantById = async (id) => {
     } else {
       // 💡 Generate Stripe Customer Portal URL
       const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-      console.log(URL);
 
       tenant.subscription.paymentURL = URL;
       //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
       await tenant.subscription.save();
     }
   } else {
-    console.log('I am here');
     // 💡 Generate Stripe Customer Portal URL
+
     const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-    console.log(URL);
 
     tenant.subscription.paymentURL = URL;
     //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better

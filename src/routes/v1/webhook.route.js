@@ -4,6 +4,7 @@ const Stripe = require('stripe');
 const config = require('../../config/config');
 
 const { subscriptionService, emailService, tenantService } = require('../../services');
+const logger = require('../../config/logger');
 
 const stripe = Stripe(config.stripe.secretKey);
 
@@ -22,7 +23,7 @@ router.post(
         config.stripe.webhookSecret //process.env.STRIPE_WEBHOOK_SECRET // provided in `stripe listen` output
       );
     } catch (err) {
-      console.error('Webhook signature verification failed.', err.message);
+      logger.error('Webhook signature verification failed.', err.message);
       return res.sendStatus(400);
     }
 
@@ -84,7 +85,7 @@ router.post(
 
             await emailService.sendEmail(customerEmail, subject, text);
           } else {
-            console.warn(`No business email found for tenant ${tenantId}`);
+            logger.warn(`No business email found for tenant ${tenantId}`);
           }
         }
 
@@ -145,7 +146,7 @@ router.post(
         if (customerEmail) {
           await emailService.sendEmail(customerEmail, subject, text);
         } else {
-          console.warn(`Customer email not found for customer ${customerId}`);
+          logger.warn(`Customer email not found for customer ${customerId}`);
         }
 
         break;
@@ -213,7 +214,7 @@ router.post(
 
           await emailService.sendEmail(customerEmail, subject, text);
         } else {
-          console.warn(`No business email found for customer ${customerId}`);
+          logger.warn(`No business email found for customer ${customerId}`);
         }
 
         break;
@@ -221,7 +222,7 @@ router.post(
 
       // Add more cases as needed
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        logger.error(`Unhandled event type ${event.type}`);
     }
 
     res.json({ received: true });

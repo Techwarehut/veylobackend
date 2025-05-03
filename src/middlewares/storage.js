@@ -19,10 +19,9 @@ if (config.env === 'development') {
       if (!tenantId) {
         return cb(new Error('Tenant ID is missing'), null);
       }
-      console.log('directory', __dirname);
+
       // Create a folder for the tenant if it doesn't exist
       const uploadDir = path.join(__dirname, '..', 'uploads', tenantId);
-      console.log('directory', uploadDir);
 
       // Ensure that the directory exists or create it
       if (!fs.existsSync(uploadDir)) {

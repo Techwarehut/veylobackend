@@ -4,6 +4,8 @@ const { jobService, customerService } = require('../services');
 const { Job } = require('../models');
 const pick = require('../utils/pick');
 const mongoose = require('mongoose'); // Ensure this is present!
+const { handleJobEvents } = require('../events/job.events');
+const logger = require('../config/logger');
 
 const populateJob = async (job) => {
   const populatedJob = await Job.populate(job, [
@@ -92,6 +94,11 @@ const createJob = catchAsync(async (req, res) => {
       // Assign detailed data to the new field
       populatedResult.siteLocation = matchingSiteLocation || null;
     }
+
+    handleJobEvents('JOB_ASSIGNED', populatedResult, req.user.id).catch((err) => {
+      logger.error('Error in handleJobEvents:', err);
+    });
+
     jobs.push(populatedResult);
   }
 
@@ -254,6 +261,10 @@ const updateJob = catchAsync(async (req, res) => {
 
   const populatedResult = await populateJob(job);
   res.send(populatedResult);
+
+  handleJobEvents('JOB_UPDATED', job, req.user.id).catch((err) => {
+    logger.error('Error in handleJobEvents:', err);
+  });
 });
 
 const deleteJob = catchAsync(async (req, res) => {

@@ -4,6 +4,7 @@ const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { userService, emailService, tenantService } = require('../services');
 const crypto = require('crypto');
+const logger = require('../config/logger');
 
 // Function to generate a complex random password
 const generateComplexPassword = () => {
@@ -79,6 +80,7 @@ const getUser = catchAsync(async (req, res) => {
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
+
   res.send(user);
 });
 
@@ -145,7 +147,7 @@ const deleteUser = catchAsync(async (req, res) => {
 const uploadProfilePic = async (req, res) => {
   const tenantId = req.user.tenantID;
   if (!req.file) {
-    console.error('Multer did not process the file. req.file is undefined.');
+    logger.error('Multer did not process the file. req.file is undefined.');
     return res.status(400).json({ message: 'No file uploaded' });
   }
 
@@ -162,7 +164,7 @@ const uploadProfilePic = async (req, res) => {
       profileUrl: user.profileUrl,
     }); */
   } catch (error) {
-    console.error('Error processing file upload:', error);
+    logger.error('Error processing file upload:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 };

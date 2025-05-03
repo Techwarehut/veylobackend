@@ -338,13 +338,13 @@ const getJobsForCalendar = async (tenantId, selectedDate, role, userId) => {
   }
 
   // Now, ensure that at least one job exists for every day in the month for the selected date
-  const monthStart = formattedSelectedDate.clone().startOf('month'); // Start of the selected month
+  /*  const monthStart = formattedSelectedDate.clone().startOf('month'); // Start of the selected month
   const monthEnd = formattedSelectedDate.clone().endOf('month'); // End of the selected month
 
-  let daysWithJobs = [];
+  let daysWithJobs = []; */
 
   // Loop through the entire month and ensure there's at least one job for each day
-  for (let date = monthStart; date.isBefore(monthEnd); date.add(1, 'day')) {
+  /*  for (let date = monthStart; date.isBefore(monthEnd); date.add(1, 'day')) {
     const dayJobs = await Job.find({
       tenantId: tenantObjectId,
       dueDate: { $gte: date.startOf('day').toDate(), $lte: date.endOf('day').toDate() },
@@ -354,7 +354,7 @@ const getJobsForCalendar = async (tenantId, selectedDate, role, userId) => {
       date: date.format('YYYY-MM-DD'),
       hasJob: dayJobs.length > 0,
     });
-  }
+  } */
 
   // Transform the jobs into a format that Agenda expects (grouped by date)
   const items = {};
@@ -404,16 +404,16 @@ const getJobsForCalendar = async (tenantId, selectedDate, role, userId) => {
     });
   });
 
-  // Ensure that there are empty arrays for dates where there are no jobs
+  /*  // Ensure that there are empty arrays for dates where there are no jobs
   daysWithJobs.forEach((day) => {
     if (day.hasJob && !items[day.date]) {
       items[day.date] = []; // Ensure the day exists in the items, even if no jobs
     }
-  });
+  }); */
 
   return {
     items,
-    daysWithJobs,
+    // daysWithJobs,
   };
 };
 

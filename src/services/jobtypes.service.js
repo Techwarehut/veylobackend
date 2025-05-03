@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const { JobTypes } = require('../models');
 const ApiError = require('../utils/ApiError');
+const logger = require('../config/logger');
 
 /**
  * Create a new job type document
@@ -29,14 +30,13 @@ const queryJobTypes = async (filter, options) => {
  */
 const getJobTypeByTenantId = async (tenantId) => {
   try {
-    console.log('tenantId:', tenantId);
     const jobType = await JobTypes.findOne({ tenantId }).exec(); // Adding .exec() ensures proper promise handling
     if (!jobType) {
       throw new Error('JobType not found for this tenant');
     }
     return jobType;
   } catch (error) {
-    console.error('Error in getJobTypeByTenantId:', error);
+    logger.error('Error in getJobTypeByTenantId:', error);
     throw error;
   }
 };
@@ -102,7 +102,6 @@ const updateJobTypes = async (tenantId, jobTypes) => {
  * @returns {Promise<JobTypes>}
  */
 const createDefaultJobTypesForTenant = async (tenantId, defaultJobTypes) => {
-  console.log(tenantId, defaultJobTypes);
   const jobType = await JobTypes.create({
     tenantId,
     job_types: defaultJobTypes,

@@ -48,7 +48,7 @@ const generatePDFHeader = (doc, entity, title) => {
     try {
       doc.image(logoPath, startX, y, { height: 40, align: 'center', valign: 'center' });
     } catch (error) {
-      console.error('Error loading logo:', error.message);
+      logger.error('Error loading logo:', error.message);
     }
   }
 

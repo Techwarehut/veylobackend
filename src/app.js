@@ -58,7 +58,6 @@ if (config.env === 'production') {
 // Serve static files from "uploads" folder
 //app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')), (req, res, next) => {
-  console.log(`Static file request: ${req.url}`);
   next();
 });
 

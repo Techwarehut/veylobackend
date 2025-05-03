@@ -1,6 +1,7 @@
 const Stripe = require('stripe');
 const config = require('../config/config');
 const { Subscription } = require('../models');
+const logger = require('../config/logger');
 const stripe = Stripe(config.stripe.secretKey);
 
 const createCheckoutSession = async ({ customerEmail, priceId }) => {
@@ -33,7 +34,7 @@ const createCheckoutSession = async ({ customerEmail, priceId }) => {
       subscriptionId: session.subscription,
     };
   } catch (error) {
-    console.error('Failed to create checkout session:', error);
+    logger.error('Failed to create checkout session:', error);
     throw new Error('Unable to create checkout session');
   }
 };

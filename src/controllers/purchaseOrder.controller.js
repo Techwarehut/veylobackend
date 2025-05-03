@@ -5,6 +5,7 @@ const catchAsync = require('../utils/catchAsync');
 const { purchaseOrderService, pdfService, emailService } = require('../services');
 const { PurchaseOrder } = require('../models');
 const mongoose = require('mongoose'); // Ensure this is present!
+const logger = require('../config/logger');
 
 // Create a new purchase order
 const createPurchaseOrder = catchAsync(async (req, res) => {
@@ -398,7 +399,7 @@ const sendPDFToVendor = catchAsync(async (req, res) => {
     res.status(httpStatus.OK).send({ message: 'Email sent successfully to the vendor.' });
   } catch (error) {
     // Log the error (you can use a logger here)
-    console.error('Error sending email:', error);
+    logger.error('Error sending email:', error);
     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send the email');
   }
 });

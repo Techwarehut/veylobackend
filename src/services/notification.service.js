@@ -1,4 +1,5 @@
 const { Expo } = require('expo-server-sdk');
+const logger = require('../config/logger');
 
 const expo = new Expo();
 
@@ -32,7 +33,7 @@ const sendNotificationsToUsers = async (tokens, title, body, data = {}) => {
       const ticketChunk = await expo.sendPushNotificationsAsync(chunk);
       tickets.push(...ticketChunk);
     } catch (error) {
-      console.error('Error sending push notification chunk:', error);
+      logger.error('Error sending push notification chunk:', error);
     }
   }
 

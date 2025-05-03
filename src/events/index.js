@@ -1,3 +1,4 @@
+const logger = require('../config/logger');
 const { handleJobEvents } = require('./job.events');
 const { handlePurchaseEvents } = require('./purchase.events');
 
@@ -9,7 +10,7 @@ const events = {
       case 'PURCHASE':
         return handlePurchaseEvents(payload.event, payload.purchase);
       default:
-        console.warn(`Unhandled event type: ${type}`);
+        logger.warn(`Unhandled event type: ${type}`);
     }
   },
 };

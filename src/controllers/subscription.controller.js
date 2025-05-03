@@ -5,7 +5,7 @@ const subscriptionService = require('../services/subscription.service');
 const createCheckoutSession = catchAsync(async (req, res) => {
   const user = req.user;
   const { email, price } = req.body;
-  console.log('Received:', req.body);
+
   if (!user?.email || !price) {
     return res.status(httpStatus.BAD_REQUEST).send({ message: 'Missing user email or priceId' });
   }
