@@ -3,7 +3,6 @@ const catchAsync = require('../utils/catchAsync');
 const { dashboardService, jobService } = require('../services');
 
 const getDashboardData = catchAsync(async (req, res) => {
-  console.log('Dashboard Data Start');
   const tenantId = req.user.tenantID;
   const role = req.user.role;
   const userId = req.user.id;

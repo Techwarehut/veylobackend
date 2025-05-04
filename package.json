@@ -76,6 +76,7 @@
     "swagger-jsdoc": "^6.0.8",
     "swagger-ui-express": "^4.1.6",
     "validator": "^13.0.0",
+    "web-push": "^3.6.7",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^5.0.0",
     "winston-transport-sentry-node": "^3.0.0",

@@ -19,11 +19,11 @@ const siteLocationSchema = mongoose.Schema({
     type: String,
     default: '',
     trim: true,
-    validate(value) {
+    /*  validate(value) {
       if (value && !validator.isMobilePhone(value, 'any')) {
         throw new Error('Invalid phone number');
       }
-    },
+    }, */
   },
   AddressLine: {
     type: String,
@@ -109,11 +109,11 @@ const customerSchema = mongoose.Schema(
       type: String,
       default: '',
       trim: true,
-      validate(value) {
+      /*  validate(value) {
         if (value && !validator.isMobilePhone(value, 'any')) {
           throw new Error('Invalid phone number');
         }
-      },
+      }, */
     },
     website: {
       type: String,

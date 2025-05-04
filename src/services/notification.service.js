@@ -40,6 +40,26 @@ const sendNotificationsToUsers = async (tokens, title, body, data = {}) => {
   return tickets;
 };
 
+const webpush = require('web-push');
+const config = require('../config/config');
+
+// VAPID keys (keep the private key secret)
+webpush.setVapidDetails('mailto:support@veylo.app', config.vapidPublicKey, config.vapidPrivateKey);
+
+/**
+ * Send a web push notification
+ * @param {Object} subscription - PushSubscription object from the client
+ * @param {Object} payload - Notification data
+ */
+const sendWebPushNotification = async (subscription, payload) => {
+  try {
+    await webpush.sendNotification(subscription, JSON.stringify(payload));
+  } catch (err) {
+    console.error('Web push error:', err);
+  }
+};
+
 module.exports = {
   sendNotificationsToUsers,
+  sendWebPushNotification,
 };

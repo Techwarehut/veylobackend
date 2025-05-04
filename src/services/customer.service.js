@@ -34,7 +34,7 @@ const queryCustomers = async (filter, options) => {
  * @returns {Promise<Customer>}
  */
 const getCustomerById = async (id) => {
-  return Customer.findById(id).select('siteLocations');
+  return Customer.findById(id); //.select('siteLocations');
 };
 
 /**

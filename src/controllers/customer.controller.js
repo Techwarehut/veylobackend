@@ -14,8 +14,24 @@ const createCustomer = catchAsync(async (req, res) => {
 
   const customerData = { ...req.body, tenantId };
   const customer = await customerService.createCustomer(customerData);
+  const billing = customer.billingAddress || {};
 
-  res.status(httpStatus.CREATED).send(customer);
+  const siteLocationData = {
+    siteName: billing.City ? `${billing.City} Site` : 'Main Site',
+    siteContactPerson: customer.customerName || '',
+    siteContactPhone: customer.phone || '',
+    AddressLine: billing.AddressLine || '',
+    City: billing.City || '',
+    Province: billing.Province || '',
+    zipcode: billing.zipcode || '',
+  };
+
+  await customerService.addSiteLocation(customer.id, siteLocationData);
+  const updatedcustomer = await customerService.getCustomerById(customer.id);
+
+  console.log(updatedcustomer);
+
+  res.status(httpStatus.CREATED).send(updatedcustomer);
 });
 
 // Get all customers with optional filters and pagination
@@ -41,6 +57,7 @@ const getCustomer = catchAsync(async (req, res) => {
   if (!customer) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Customer not found');
   }
+
   res.send(customer);
 });
 
