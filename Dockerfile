@@ -11,8 +11,6 @@ USER node
 #RUN yarn install --pure-lockfile
 RUN npm ci 
 
-# Install PM2 globally
-RUN npm install -g pm2
 
 COPY --chown=node:node . .
 
