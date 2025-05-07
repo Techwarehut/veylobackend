@@ -4,13 +4,12 @@ const path = require('path');
 const fs = require('fs');
 const Sentry = require('@sentry/node');
 const SentryTransport = require('winston-transport-sentry-node').default;
-
 const DailyRotateFile = require('winston-daily-rotate-file');
 
 // Ensure log directory exists
-const logDir = path.resolve(__dirname, '../logs');
+const logDir = path.resolve(config.env === 'production' ? '/mnt/volume_tor1_01/app/logs' : __dirname, 'logs');
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 // Initialize Sentry
@@ -54,14 +53,14 @@ const logger = winston.createLogger({
     ...(config.env === 'production'
       ? [
           new DailyRotateFile({
-            filename: 'logs/%DATE%-error.log', // Daily rotated log file for errors
+            filename: path.join(logDir, '%DATE%-error.log'), // Daily rotated log file for errors
             datePattern: 'YYYY-MM-DD', // Date format
             level: 'error',
             maxSize: '20m', // Maximum file size (20MB in this case)
             maxFiles: '30d', // Keep logs for 30 days
           }),
           new DailyRotateFile({
-            filename: 'logs/%DATE%-combined.log', // Daily rotated log file for all logs
+            filename: path.join(logDir, '%DATE%-combined.log'), // Daily rotated log file for all logs
             datePattern: 'YYYY-MM-DD', // Date format
             level: 'info',
             maxSize: '50m', // Maximum file size (50MB in this case)

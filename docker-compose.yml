@@ -12,8 +12,11 @@ services:
     #- '3000:3000'
     depends_on:
       - mongodb
+    # volumes:
+    # - .:/usr/src/node-app
     volumes:
-      - .:/usr/src/node-app
+      - /mnt/volume_tor1_01/app/uploads:/usr/src/node-app/uploads
+      - /mnt/volume_tor1_01/app/logs:/usr/src/node-app/logs
     networks:
       - node-network
 
@@ -22,7 +25,7 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - dbdata:/data/db
+      - /mnt/volume_tor1_01/mongodb:/data/db
     networks:
       - node-network
 
