@@ -39,7 +39,7 @@ if (config.env === 'development') {
   });
 } else {
   // Cloud storage for production (DigitalOcean Spaces - S3 compatible)
-  const s3 = new S3Client({
+  /*  const s3 = new S3Client({
     region: process.env.DIGITALOCEAN_REGION,
     endpoint: `https://${process.env.DIGITALOCEAN_REGION}.digitaloceanspaces.com`,
     credentials: {
@@ -58,7 +58,7 @@ if (config.env === 'development') {
     key: (req, file, cb) => {
       cb(null, `business-logos/${Date.now()}-${file.originalname}`);
     },
-  });
+  }); */
 }
 
 const upload = multer({ storage });

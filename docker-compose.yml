@@ -1,13 +1,15 @@
-version: '3'
+#version: '3'
 
 services:
   node-app:
     build: .
     image: node-app
+    restart: unless-stopped
+    env_file: ./.env
     environment:
       - MONGODB_URL=mongodb://mongodb:27017/node-boilerplate
-    ports:
-      - '3000:3000'
+    #ports:
+    #- '3000:3000'
     depends_on:
       - mongodb
     volumes:
@@ -24,8 +26,24 @@ services:
     networks:
       - node-network
 
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - node-network
+    depends_on:
+      - node-app
+
 volumes:
   dbdata:
+  caddy_data:
+  caddy_config:
 
 networks:
   node-network:

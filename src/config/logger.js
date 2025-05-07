@@ -3,7 +3,8 @@ const config = require('./config');
 const path = require('path');
 const fs = require('fs');
 const Sentry = require('@sentry/node');
-const SentryTransport = require('winston-transport-sentry-node');
+const SentryTransport = require('winston-transport-sentry-node').default;
+
 const DailyRotateFile = require('winston-daily-rotate-file');
 
 // Ensure log directory exists
@@ -69,7 +70,10 @@ const logger = winston.createLogger({
 
           // ✅ Sentry transport
           new SentryTransport({
-            sentry: Sentry,
+            sentry: {
+              dsn: config.sentryDsn,
+              environment: config.env,
+            },
             level: 'error',
           }),
         ]

@@ -1,0 +1,7 @@
+{
+    local_certs
+}
+
+api.auth.localhost {
+    reverse_proxy node-app:3000
+}
