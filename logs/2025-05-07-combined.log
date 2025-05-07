@@ -15,3 +15,7 @@
 {"level":"info","message":"Connected to MongoDB","timestamp":"2025-05-07T17:56:58.728Z"}
 {"level":"info","message":"Listening to port 3000","timestamp":"2025-05-07T17:56:58.737Z"}
 {"level":"info","message":"Connected to email server","timestamp":"2025-05-07T17:57:04.394Z"}
+{"level":"info","message":"Connected to MongoDB","timestamp":"2025-05-07T18:05:02.933Z"}
+{"level":"info","message":"Listening to port 3000","timestamp":"2025-05-07T18:05:02.937Z"}
+{"level":"info","message":"Connected to email server","timestamp":"2025-05-07T18:05:08.854Z"}
+{"level":"info","message":"SIGTERM received","timestamp":"2025-05-07T18:05:37.729Z"}
