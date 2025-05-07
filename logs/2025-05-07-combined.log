@@ -1,0 +1,4 @@
+{"level":"info","message":"Connected to MongoDB","timestamp":"2025-05-07T18:45:03.390Z"}
+{"level":"info","message":"Listening to port 3000","timestamp":"2025-05-07T18:45:03.393Z"}
+{"level":"info","message":"Connected to email server","timestamp":"2025-05-07T18:45:08.826Z"}
+{"level":"info","message":"SIGTERM received","timestamp":"2025-05-07T18:45:38.838Z"}

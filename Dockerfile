@@ -1,19 +1,15 @@
 FROM node:lts-alpine
 
-RUN mkdir -p /usr/src/node-app && chown -R node:node /usr/src/node-app
+# Create app directory
+WORKDIR /usr/src/app
 
-WORKDIR /usr/src/node-app
-
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci
 
-USER node
+# Copy rest of the source code
+COPY . .
 
-#RUN yarn install --pure-lockfile
-RUN npm ci 
-
-
-COPY --chown=node:node . .
-
-CMD ["npm", "start"]
-
+# Expose port and start app
 EXPOSE 3000
+CMD ["node", "src/index.js"]
