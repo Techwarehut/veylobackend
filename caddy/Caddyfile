@@ -1,7 +1,4 @@
-{
-    local_certs
-}
-
-api.auth.localhost {
+api.veylo.app {
     reverse_proxy node-app:3000
+    tls support@veylo.app
 }
