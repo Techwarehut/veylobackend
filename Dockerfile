@@ -14,6 +14,6 @@ RUN npm ci
 
 COPY --chown=node:node . .
 
-CMD ["yarn", "start"]
+CMD ["npm", "start"]
 
 EXPOSE 3000
