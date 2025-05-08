@@ -147,7 +147,7 @@ const getTenantById = async (id) => {
     }
   }
   logger.info('Function Exit');
-  logger.debug(`Tenant data: ${JSON.stringify(tenant, null, 2)}`);
+  logger.debug(`Tenant data: ${JSON.stringify(tenant.toObject(), null, 2)}`);
 
   return tenant;
 };
