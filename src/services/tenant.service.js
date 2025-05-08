@@ -67,14 +67,17 @@ const getTenantById = async (id) => {
 
     // OPTIONAL: check if payment method already exists to avoid regenerating session
     const hasPaymentMethod = await subscriptionService.hasPaymentMethod(tenant.subscription.customerId);
+
     if (!hasPaymentMethod && (!paymentURL || isExpired)) {
       // Create new setup session
+      logger.warn('I am at regenerateCheckout');
       const URL = await subscriptionService.regenerateCheckoutSession(
         tenant.subscription.customerId,
         tenant.subscription.stripeSubscriptionId,
         tenant.id.toString(),
         'cad' //tenant.subscription.currency
       );
+      logger.warn('URL at regenerateCheckout', URL);
 
       // Update paymentURL in DB
       tenant.subscription.paymentURL = URL;
@@ -82,29 +85,33 @@ const getTenantById = async (id) => {
 
       //paymentURL = newSession.url;
     } else if (hasPaymentMethod) {
+      logger.warn('I am at hasPaymentMethod');
       // 💡 Generate Stripe Customer Portal URL
       const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
+      logger.warn('URL at hasPaymentMethod', URL);
 
       tenant.subscription.paymentURL = URL;
       tenant.subscription.status = 'payment attached'; // Optional: use another status like 'active' if it fits better
       await tenant.subscription.save();
     } else {
+      logger.warn('I am at else');
       // 💡 Generate Stripe Customer Portal URL
       const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-
+      logger.warn('URL at else', URL);
       tenant.subscription.paymentURL = URL;
       //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
       await tenant.subscription.save();
     }
   } else {
     // 💡 Generate Stripe Customer Portal URL
-
+    logger.warn('I am at not at trial');
     const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-
+    logger.warn('URL at no trial', URL);
     tenant.subscription.paymentURL = URL;
     //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
     await tenant.subscription.save();
   }
+  logger.warn('returning', tenant);
   return tenant;
 };
 
