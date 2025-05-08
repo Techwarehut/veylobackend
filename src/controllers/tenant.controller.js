@@ -15,7 +15,12 @@ const getTenant = catchAsync(async (req, res) => {
 
   logger.debug(`[GET TENANT] tenant data: ${JSON.stringify(tenant, null, 2)}`);
 
-  res.send(tenant.toJSON());
+  try {
+    res.send(tenant.toJSON());
+  } catch (err) {
+    logger.error(`[GET TENANT] Failed to send tenant JSON: ${err.message}`, err);
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to return tenant data');
+  }
 });
 
 const updateTenant = catchAsync(async (req, res) => {
