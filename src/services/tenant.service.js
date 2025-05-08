@@ -56,7 +56,9 @@ const queryTenants = async (filter, options) => {
  * @returns {Promise<Tenant>}
  */
 const getTenantById = async (id) => {
+  logger.info('tenantId', id);
   const tenant = await Tenant.findById(id).populate('subscription');
+  logger.info(tenant);
   let paymentURL = tenant.subscription?.paymentURL;
 
   // Check if trial is still ongoing and paymentURL needs to be refreshed
