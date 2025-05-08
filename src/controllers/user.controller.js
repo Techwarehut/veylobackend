@@ -92,7 +92,7 @@ const getTenantForUser = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Tenant not found');
   }
 
-  // Check if trial is still ongoing and paymentURL needs to be refreshed
+  /*   // Check if trial is still ongoing and paymentURL needs to be refreshed
   if (tenant.subscription?.status === 'trialing' && req.user.role === 'owner') {
     const now = new Date();
     const updatedAt = new Date(tenant.subscription.updatedAt);
@@ -129,9 +129,9 @@ const getTenantForUser = catchAsync(async (req, res) => {
       //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
       await tenant.subscription.save();
     }
-  }
+  } */
 
-  res.send(tenant);
+  res.json(tenant.toObject());
 });
 
 const updateUser = catchAsync(async (req, res) => {
