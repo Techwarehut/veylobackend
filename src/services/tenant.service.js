@@ -78,9 +78,10 @@ const getTenantById = async (id) => {
   // Check if trial is still ongoing and paymentURL needs to be refreshed
   if (tenant.subscription?.status === 'trialing' /* && user.role === 'owner' */) {
     logger.info('🔁 Subscription is trialing');
-    const now = new Date();
+    /*   const now = new Date();
     const updatedAt = new Date(tenant.subscription.updatedAt);
-    const isExpired = now - updatedAt > 24 * 60 * 60 * 1000;
+    const isExpired = now - updatedAt > 24 * 60 * 60 * 1000; */
+    const isExpired = true;
 
     let hasPaymentMethod;
     try {
@@ -122,6 +123,7 @@ const getTenantById = async (id) => {
         throw new Error('Failed to get customer portal URL');
       }
     } else {
+      logger.warn('⏳ Payment URL exists but not expired and no payment method — returning existing URL');
       /* logger.warn('I am at else');
       // 💡 Generate Stripe Customer Portal URL
       const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
