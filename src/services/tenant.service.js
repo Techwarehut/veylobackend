@@ -56,9 +56,13 @@ const queryTenants = async (filter, options) => {
  * @returns {Promise<Tenant>}
  */
 const getTenantById = async (id) => {
-  logger.info('tenantId', id);
+  logger.info(`tenantId: ${id}`);
   const tenant = await Tenant.findById(id).populate('subscription');
   logger.info(tenant);
+  if (!tenant || !tenant.subscription) {
+    logger.error(`Tenant or subscription missing for id: ${id}`);
+    throw new Error('Tenant or subscription not found');
+  }
   let paymentURL = tenant.subscription?.paymentURL;
 
   // Check if trial is still ongoing and paymentURL needs to be refreshed
@@ -113,7 +117,8 @@ const getTenantById = async (id) => {
     //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
     await tenant.subscription.save();
   }
-  logger.warn('returning', tenant);
+  logger.debug(`Tenant data: ${JSON.stringify(tenant, null, 2)}`);
+
   return tenant;
 };
 
