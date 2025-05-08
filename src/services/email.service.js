@@ -5,12 +5,17 @@ const PurchaseOrder = require('../models/purchaseOrder.model');
 const { generatePurchaseOrderPDF } = require('./pdf.service');
 
 const transport = nodemailer.createTransport(config.email.smtp);
-/* istanbul ignore next */
+
 if (config.env !== 'test') {
   transport
     .verify()
     .then(() => logger.info('Connected to email server'))
-    .catch(() => logger.error('Unable to connect to email server. Make sure you have configured the SMTP options in .env'));
+    .catch((error) => {
+      logger.error(
+        `Unable to connect to email server. Make sure you have configured the SMTP options in .env. Error: ${error.message}`
+      );
+      logger.debug(error); // Optional: Logs full error object for deeper debugging
+    });
 }
 
 /**
