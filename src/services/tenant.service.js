@@ -104,6 +104,7 @@ const getTenantById = async (id) => {
         logger.info(`✅ New checkout session URL: ${URL}`);
         tenant.subscription.paymentURL = URL;
         await tenant.subscription.save();
+        logger.info(`✅ New checkout session Saved: ${URL}`);
       } catch (err) {
         logger.error('❌ Error creating checkout session:', err);
         throw new Error('Failed to regenerate checkout session');
@@ -145,6 +146,7 @@ const getTenantById = async (id) => {
       throw new Error('Failed to get customer portal URL');
     }
   }
+  logger.info('Function Exit');
   logger.debug(`Tenant data: ${JSON.stringify(tenant, null, 2)}`);
 
   return tenant;

@@ -9,7 +9,7 @@ const router = express.Router();
 
 router
   .route('/')
-  .get(auth('getTenant'), validate(tenantValidation.getTenant), tenantController.getTenant)
+  .get(auth('getTenant'), tenantController.getTenant)
   .patch(auth('manageTenant'), validate(tenantValidation.updateTenant), tenantController.updateTenant);
 
 // Upload business logo
