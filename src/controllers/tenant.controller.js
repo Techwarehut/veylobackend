@@ -15,7 +15,7 @@ const getTenant = catchAsync(async (req, res) => {
 
   logger.debug(`[GET TENANT] tenant data: ${JSON.stringify(tenant, null, 2)}`);
 
-  res.send(tenant);
+  res.send({ tenant });
 });
 
 const updateTenant = catchAsync(async (req, res) => {
