@@ -19,14 +19,15 @@ storage = multer.diskStorage({
       return cb(new Error('Tenant ID is missing'), null);
     }
 
-    let uploadDir;
+    /*  let uploadDir;
     if (config.env === 'development') {
       // Create a folder for the tenant if it doesn't exist
       uploadDir = path.join(__dirname, '..', 'uploads', tenantId);
     } else {
       // For production, use the mounted volume path
       uploadDir = path.join('/mnt/volume_tor1_01/app/uploads', tenantId);
-    }
+    } */
+    const uploadDir = path.join(__dirname, '..', 'uploads', tenantId);
 
     // Ensure that the directory exists or create it
     if (!fs.existsSync(uploadDir)) {

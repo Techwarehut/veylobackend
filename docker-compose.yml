@@ -15,8 +15,8 @@ services:
     # volumes:
     # - .:/usr/src/node-app
     volumes:
-      - /mnt/volume_tor1_01/app/uploads:/usr/src/node-app/uploads
-      - /mnt/volume_tor1_01/app/logs:/usr/src/node-app/logs
+      - /mnt/volume_tor1_01/app/uploads:/usr/src/app/uploads
+      - /mnt/volume_tor1_01/app/logs:/usr/src/app/logs
     networks:
       - node-network
 

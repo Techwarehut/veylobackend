@@ -8,7 +8,8 @@ const DailyRotateFile = require('winston-daily-rotate-file');
 
 // Ensure log directory exists
 
-const logDir = config.env === 'production' ? '/mnt/volume_tor1_01/app/logs' : path.resolve(__dirname, 'logs');
+//const logDir = config.env === 'production' ? '/usr/src/node-app/logs' : path.resolve(__dirname, 'logs');
+const logDir = path.resolve(__dirname, 'logs');
 
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
