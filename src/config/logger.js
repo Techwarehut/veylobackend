@@ -7,7 +7,9 @@ const SentryTransport = require('winston-transport-sentry-node').default;
 const DailyRotateFile = require('winston-daily-rotate-file');
 
 // Ensure log directory exists
-const logDir = path.resolve(config.env === 'production' ? '/mnt/volume_tor1_01/app/logs' : __dirname, 'logs');
+
+const logDir = config.env === 'production' ? '/mnt/volume_tor1_01/app/logs' : path.resolve(__dirname, 'logs');
+
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
