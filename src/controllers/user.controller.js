@@ -131,7 +131,8 @@ const getTenantForUser = catchAsync(async (req, res) => {
     }
   } */
 
-  res.json(tenant.toObject());
+  //res.json(tenant.toObject());
+  res.send(tenant);
 });
 
 const updateUser = catchAsync(async (req, res) => {
