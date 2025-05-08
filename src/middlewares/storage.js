@@ -28,7 +28,7 @@ storage = multer.diskStorage({
       uploadDir = path.join('/mnt/volume_tor1_01/app/uploads', tenantId);
     } */
     // const uploadDir = path.join(__dirname, '..', 'uploads', tenantId);
-    const uploadDir = '/usr/src/app/uploads';
+    const uploadDir = path.join('/usr/src/app/uploads', tenantId);
 
     // Ensure that the directory exists or create it
     if (!fs.existsSync(uploadDir)) {
