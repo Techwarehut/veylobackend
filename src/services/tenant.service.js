@@ -57,48 +57,70 @@ const queryTenants = async (filter, options) => {
  */
 const getTenantById = async (id) => {
   logger.info(`tenantId: ${id}`);
-  const tenant = await Tenant.findById(id).populate('subscription');
-  logger.info('Tenant full:', tenant.subscription.toJSON());
-  if (!tenant || !tenant.subscription) {
-    logger.error(`Tenant or subscription missing for id: ${id}`);
-    throw new Error('Tenant or subscription not found');
+  let tenant;
+  try {
+    tenant = await Tenant.findById(id).populate('subscription');
+    if (!tenant) {
+      logger.error(`❌ No tenant found with id: ${id}`);
+      throw new Error('Tenant not found');
+    }
+    if (!tenant.subscription) {
+      logger.error(`❌ Subscription missing for tenant id: ${id}`);
+      throw new Error('Tenant subscription not found');
+    }
+    logger.info(`✅ Tenant and subscription loaded: ${tenant.subscription.status}`);
+  } catch (err) {
+    logger.error(`❌ Error fetching tenant or subscription: ${err.message}`, err);
+    throw new Error('Failed to load tenant or subscription');
   }
   let paymentURL = tenant.subscription?.paymentURL;
 
   // Check if trial is still ongoing and paymentURL needs to be refreshed
   if (tenant.subscription?.status === 'trialing' /* && user.role === 'owner' */) {
+    logger.info('🔁 Subscription is trialing');
     const now = new Date();
     const updatedAt = new Date(tenant.subscription.updatedAt);
     const isExpired = now - updatedAt > 24 * 60 * 60 * 1000;
 
-    // OPTIONAL: check if payment method already exists to avoid regenerating session
-    const hasPaymentMethod = await subscriptionService.hasPaymentMethod(tenant.subscription.customerId);
+    let hasPaymentMethod;
+    try {
+      hasPaymentMethod = await subscriptionService.hasPaymentMethod(tenant.subscription.customerId);
+      logger.info(`💳 hasPaymentMethod: ${hasPaymentMethod}`);
+    } catch (err) {
+      logger.error('❌ Error checking payment method:', err);
+      throw new Error('Payment method check failed');
+    }
 
     if (!hasPaymentMethod && (!paymentURL || isExpired)) {
-      // Create new setup session
-      logger.warn('I am at regenerateCheckout');
-      const URL = await subscriptionService.regenerateCheckoutSession(
-        tenant.subscription.customerId,
-        tenant.subscription.stripeSubscriptionId,
-        tenant.id.toString(),
-        'cad' //tenant.subscription.currency
-      );
-      logger.warn('URL at regenerateCheckout', URL);
-
-      // Update paymentURL in DB
-      tenant.subscription.paymentURL = URL;
-      await tenant.subscription.save();
+      logger.warn('⚠️ Generating new checkout session');
+      try {
+        const URL = await subscriptionService.regenerateCheckoutSession(
+          tenant.subscription.customerId,
+          tenant.subscription.stripeSubscriptionId,
+          tenant.id.toString(),
+          tenant.subscription.currency || 'cad'
+        );
+        logger.info(`✅ New checkout session URL: ${URL}`);
+        tenant.subscription.paymentURL = URL;
+        await tenant.subscription.save();
+      } catch (err) {
+        logger.error('❌ Error creating checkout session:', err);
+        throw new Error('Failed to regenerate checkout session');
+      }
 
       //paymentURL = newSession.url;
     } else if (hasPaymentMethod) {
-      logger.warn('I am at hasPaymentMethod');
-      // 💡 Generate Stripe Customer Portal URL
-      const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-      logger.warn('URL at hasPaymentMethod', URL);
-
-      tenant.subscription.paymentURL = URL;
-      tenant.subscription.status = 'payment attached'; // Optional: use another status like 'active' if it fits better
-      await tenant.subscription.save();
+      logger.info('🔁 Generating customer portal URL since payment method exists');
+      try {
+        const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
+        logger.info(`✅ Customer portal URL: ${URL}`);
+        tenant.subscription.paymentURL = URL;
+        tenant.subscription.status = 'payment attached';
+        await tenant.subscription.save();
+      } catch (err) {
+        logger.error('❌ Error getting customer portal URL:', err);
+        throw new Error('Failed to get customer portal URL');
+      }
     } else {
       /* logger.warn('I am at else');
       // 💡 Generate Stripe Customer Portal URL
@@ -109,13 +131,17 @@ const getTenantById = async (id) => {
       await tenant.subscription.save(); */
     }
   } else {
-    // 💡 Generate Stripe Customer Portal URL
-    logger.warn('I am at not at trial');
-    const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
-    logger.warn('URL at no trial', URL);
-    tenant.subscription.paymentURL = URL;
-    //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
-    await tenant.subscription.save();
+    // 🔁 Not trialing
+    logger.info('💼 Subscription is not trialing, generating portal URL');
+    try {
+      const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
+      logger.info(`✅ Portal URL (non-trial): ${URL}`);
+      tenant.subscription.paymentURL = URL;
+      await tenant.subscription.save();
+    } catch (err) {
+      logger.error('❌ Error getting portal URL (non-trial):', err);
+      throw new Error('Failed to get customer portal URL');
+    }
   }
   logger.debug(`Tenant data: ${JSON.stringify(tenant, null, 2)}`);
 
