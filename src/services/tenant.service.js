@@ -58,7 +58,7 @@ const queryTenants = async (filter, options) => {
 const getTenantById = async (id) => {
   logger.info(`tenantId: ${id}`);
   const tenant = await Tenant.findById(id).populate('subscription');
-  logger.info('Tenant full:', tenant.toJSON());
+  logger.info('Tenant full:', tenant.subscription.toJSON());
   if (!tenant || !tenant.subscription) {
     logger.error(`Tenant or subscription missing for id: ${id}`);
     throw new Error('Tenant or subscription not found');
