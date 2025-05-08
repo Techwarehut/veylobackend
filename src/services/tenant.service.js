@@ -94,13 +94,13 @@ const getTenantById = async (id) => {
       tenant.subscription.status = 'payment attached'; // Optional: use another status like 'active' if it fits better
       await tenant.subscription.save();
     } else {
-      logger.warn('I am at else');
+      /* logger.warn('I am at else');
       // 💡 Generate Stripe Customer Portal URL
       const URL = await subscriptionService.getCustomerPortalUrl(tenant.subscription.customerId);
       logger.warn('URL at else', URL);
       tenant.subscription.paymentURL = URL;
       //tenant.subscription.status = 'paymentAdded'; // Optional: use another status like 'active' if it fits better
-      await tenant.subscription.save();
+      await tenant.subscription.save(); */
     }
   } else {
     // 💡 Generate Stripe Customer Portal URL
