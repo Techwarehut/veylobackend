@@ -5,9 +5,9 @@ const { tenantService } = require('../services');
 const logger = require('../config/logger');
 
 const getTenant = catchAsync(async (req, res) => {
-  logger.info(`[GET TENANT] user: ${req.user.id}, tenantId: ${tenantId}`);
   const tenantId = req.user.tenantID;
   const tenant = await tenantService.getTenantById(tenantId);
+  logger.info(`[GET TENANT] user: ${req.user.id}, tenantId: ${tenantId}`);
 
   if (!tenant) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Tenant not found');
