@@ -70,20 +70,35 @@ router.post(
 
           if (customerEmail) {
             const subject = "Don't miss out — 80% off for 1 year!";
-            const text = `Hi there,
-        
-        We noticed you don't have a payment method on file, and we’d love for you to continue your journey with Veylo.
-        
-        As a thank you for being with us, here’s an exclusive offer: use the coupon code VEYLOVISIONARY to get 80% off for your first year!
-        
-        Update your payment method and apply the code to take advantage of this special deal.
-        
-        If you need help updating your payment details, just click here: ${tenant.subscription.paymentURL}
-        
-        Thank you for being a visionary with us,
-        The Veylo App Team`;
 
-            await emailService.sendEmail(customerEmail, subject, text);
+            const text = `Hi there,
+          
+          We noticed you don't have a payment method on file, and we’d love for you to continue your journey with Veylo.
+          
+          As a thank you for being with us, here’s an exclusive offer: use the coupon code VEYLOVISIONARY to get 80% off for your first year!
+          
+          Update your payment method and apply the code to take advantage of this special deal.
+          
+          If you need help updating your payment details, just click here: ${tenant.subscription.paymentURL}
+          
+          Thank you for being a visionary with us,
+          The Veylo App Team`;
+
+            const html = `
+              <p>Hi there,</p>
+              <p>We noticed you don’t have a payment method on file, and we’d love for you to continue your journey with <strong>Veylo</strong>.</p>
+              <p><strong>As a thank you</strong> for being with us, here’s an exclusive offer:</p>
+              <p style="font-size: 16px; font-weight: bold;">Use the coupon code <span style="background-color:#f3f4f6;padding:2px 6px;border-radius:4px;">VEYLOVISIONARY</span> to get <span style="color:#2b4f73;">80% off</span> for your first year!</p>
+              <p>Update your payment method and apply the code to take advantage of this special deal.</p>
+              <p>
+                <a href="${tenant.subscription.paymentURL}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">
+                  Update Payment Details
+                </a>
+              </p>
+              <p>Thank you for being a visionary with us,<br />The Veylo App Team</p>
+            `;
+
+            await emailService.sendEmail(customerEmail, subject, text, html);
           } else {
             logger.warn(`No business email found for tenant ${tenantId}`);
           }
@@ -128,23 +143,41 @@ router.post(
 
         // ✉️ Send email to reactivate
         const subject = 'Your subscription was cancelled — Reactivate now!';
+
         const text = `Hi there,
 
-        We're truly sorry to see you go. We value you as part of the Veylo family, and we'd love to have you back.
-        
-        To make it easier, here's a special offer just for you: use the coupon code WELCOME50 to get an additional 50% off when you reactivate your subscription.
-        
-        You can easily reactivate by clicking the link below:
-        
-        Reactivate your subscription: ${reactivationUrl}
-        
-        If there's anything we can do to improve your experience, feel free to reply and let us know.
-        
-        Thank you for being with us,
-        The Veylo App Team`;
+We're truly sorry to see you go. We value you as part of the Veylo family, and we'd love to have you back.
+
+To make it easier, here's a special offer just for you: use the coupon code WELCOME50 to get an additional 50% off when you reactivate your subscription.
+
+You can easily reactivate by clicking the link below:
+
+Reactivate your subscription: ${reactivationUrl}
+
+If there's anything we can do to improve your experience, feel free to reply and let us know.
+
+Thank you for being with us,
+The Veylo App Team`;
+
+        const html = `
+  <p>Hi there,</p>
+  <p>We're truly sorry to see you go. We value you as part of the <strong>Veylo family</strong>, and we'd love to have you back.</p>
+  <p>To make it easier, here's a special offer just for you:</p>
+  <p style="font-size: 16px; font-weight: bold;">
+    Use the coupon code <span style="background-color:#f3f4f6;padding:2px 6px;border-radius:4px;">WELCOME50</span>
+    to get an additional <span style="color:#2b4f73;">50% off</span> when you reactivate your subscription.
+  </p>
+  <p>
+    <a href="${reactivationUrl}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">
+      Reactivate Your Subscription
+    </a>
+  </p>
+  <p>If there's anything we can do to improve your experience, feel free to reply and let us know.</p>
+  <p>Thank you for being with us,<br />The Veylo App Team</p>
+`;
 
         if (customerEmail) {
-          await emailService.sendEmail(customerEmail, subject, text);
+          await emailService.sendEmail(customerEmail, subject, text, html);
         } else {
           logger.warn(`Customer email not found for customer ${customerId}`);
         }
@@ -199,20 +232,34 @@ router.post(
 
         if (customerEmail) {
           const subject = 'Important: Your payment method has been removed';
-          const text = `Hi there,
-      
-      We noticed that you've removed your payment method from your Veylo account.
-      
-      Without an active payment method, your future invoices might fail and your subscription could be interrupted.
-      
-      To keep your services running smoothly, please add a new payment method here: ${tenant.subscription.paymentURL}
-      
-      If you need any help or have questions, feel free to reach out!
-      
-      Thanks for being part of Veylo,  
-      The Veylo App Team`;
 
-          await emailService.sendEmail(customerEmail, subject, text);
+          const text = `Hi there,
+        
+        We noticed that you've removed your payment method from your Veylo account.
+        
+        Without an active payment method, your future invoices might fail and your subscription could be interrupted.
+        
+        To keep your services running smoothly, please add a new payment method here: ${tenant.subscription.paymentURL}
+        
+        If you need any help or have questions, feel free to reach out!
+        
+        Thanks for being part of Veylo,  
+        The Veylo App Team`;
+
+          const html = `
+            <p>Hi there,</p>
+            <p>We noticed that you've <strong>removed your payment method</strong> from your Veylo account.</p>
+            <p>Without an active payment method, your future invoices might fail and your subscription could be interrupted.</p>
+            <p>
+              <a href="${tenant.subscription.paymentURL}" style="display:inline-block;margin-top:12px;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">
+                Add a New Payment Method
+              </a>
+            </p>
+            <p>If you need any help or have questions, feel free to reach out!</p>
+            <p>Thanks for being part of Veylo,<br />The Veylo App Team</p>
+          `;
+
+          await emailService.sendEmail(customerEmail, subject, text, html);
         } else {
           logger.warn(`No business email found for customer ${customerId}`);
         }

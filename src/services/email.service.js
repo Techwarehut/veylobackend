@@ -1,148 +1,130 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const config = require('../config/config');
 const logger = require('../config/logger');
 const PurchaseOrder = require('../models/purchaseOrder.model');
 const { generatePurchaseOrderPDF } = require('./pdf.service');
 
-const transport = nodemailer.createTransport(config.email.smtp);
-
-if (config.env !== 'test') {
-  transport
-    .verify()
-    .then(() => logger.info('Connected to email server'))
-    .catch((error) => {
-      logger.error(
-        `Unable to connect to email server. Make sure you have configured the SMTP options in .env. Error: ${error.message}`
-      );
-      logger.debug(error); // Optional: Logs full error object for deeper debugging
-    });
-}
+const resend = new Resend(config.email.resendApiKey); // Use your Resend API key here
 
 /**
- * Send an email
+ * Send an email with both HTML and plain text
  * @param {string} to
  * @param {string} subject
  * @param {string} text
+ * @param {string} html
+ * @param {Array} attachments (optional)
  * @returns {Promise}
  */
-const sendEmail = async (to, subject, text) => {
-  const msg = { from: config.email.from, to, subject, text, sender: 'Veylo App' };
-  await transport.sendMail(msg);
+const sendEmail = async (to, subject, text, html, attachments = []) => {
+  try {
+    await resend.emails.send({
+      from: config.email.from,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+    logger.info(`Email sent to ${to}`);
+  } catch (error) {
+    logger.error(`Failed to send email to ${to}: ${error.message}`);
+  }
 };
 
-/**
- * Send reset password email
- * @param {string} to
- * @param {string} token
- * @returns {Promise}
- */
 const sendResetPasswordEmail = async (to, token) => {
-  const subject = 'Reset password';
-  // replace this url with the link to the reset password page of your front-end app
+  const subject = 'Reset your Veylo password';
   const resetPasswordUrl = `https://veylo.app/resetpassword?token=${token}`;
-  const text = `Dear user,
-To reset your password, click on this link: ${resetPasswordUrl}
-If you did not request any password resets, then ignore this email.`;
-  await sendEmail(to, subject, text);
+  const text = `Reset your password: ${resetPasswordUrl}`;
+  const html = `
+    <p>Dear user,</p>
+    <p>To reset your password, click the button below:</p>
+    <a href="${resetPasswordUrl}" style="display:inline-block;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">Reset Password</a>
+    <p>If you didn’t request this, just ignore this email.</p>
+  `;
+
+  await sendEmail(to, subject, text, html);
 };
 
-/**
- * Send verification email
- * @param {string} to
- * @param {string} token
- * @returns {Promise}
- */
 const sendVerificationEmail = async (to, token, name) => {
-  const subject = 'Welcome to Veylo - Email Verification';
-  // replace this url with the link to the email verification page of your front-end app
-  const verificationEmailUrl = `https://veylo.app/verifyemail?token=${token}`;
-  const text = `Dear ${name},
+  const subject = 'Verify your email address';
+  const verificationUrl = `https://veylo.app/verifyemail?token=${token}`;
+  const text = `Verify your account: ${verificationUrl}`;
+  const html = `
+    <p>Dear ${name},</p>
+    <p>Welcome to Veylo! Click the button below to verify your email address:</p>
+    <a href="${verificationUrl}" style="display:inline-block;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">Verify Email</a>
+    <p>If you didn’t create an account, just ignore this email.</p>
+  `;
 
-Congratulations on joining Veylo! We're excited to have you on board.
-
-To verify your email, click on this link: ${verificationEmailUrl}
-If you did not create an account, then ignore this email.`;
-  await sendEmail(to, subject, text);
+  await sendEmail(to, subject, text, html);
 };
 
-/**
- * Send an onboarding email
- * @param {string} to - The recipient email address
- * @param {string} username - The username (email in this case)
- * @param {string} password - The generated password
- * @returns {Promise}
- */
 const sendOnboardingEmail = async (to, name, password) => {
-  const subject = 'Welcome to Veylo - Your Account Details';
+  const subject = 'Welcome to Veylo – Your Account Info';
+  const loginUrl = `https://veylo.app/login`;
+  const downloadUrl = `https://veylo.app/download`;
 
-  // Define the links (login page and download apps links)
-  const loginUrl = `https://veylo.app/login`; // Replace with your actual login page URL
-  const downloadAppUrl = `https://veylo.app/download`; // Replace with the actual app download page URL
+  const text = `
+Welcome to Veylo, ${name}!
 
-  // Construct the email body
-  const text = `Dear ${name},
+Your account has been created.
 
-Congratulations on joining Veylo! We're excited to have you on board.
+Username: ${to}
+Password: ${password}
 
-To get started, use the following credentials to log in to your account:
-- Username: ${to}
-- Password: ${password}
+Login: ${loginUrl}
+iOS/Android App: ${downloadUrl}
+Coupon: VEYLOVISIONARY (80% off for first year)
+`;
 
-You can log in to your account using the link below:
-- Login Link: ${loginUrl}
+  const html = `
+    <p>Dear ${name},</p>
+    <p>Welcome to <strong>Veylo</strong>! We're thrilled to have you on board.</p>
+    <p><strong>Here are your login details:</strong></p>
+    <ul>
+      <li>Username: <strong>${to}</strong></li>
+      <li>Password: <strong>${password}</strong></li>
+    </ul>
+    <p><a href="${loginUrl}" style="display:inline-block;padding:10px 20px;background:#2b4f73;color:#fff;text-decoration:none;border-radius:4px;">Login to Your Account</a></p>
+    <p>Download our mobile app:</p>
+    <ul>
+      <li><a href="${downloadUrl}">Download on iOS</a></li>
+      <li><a href="${downloadUrl}">Download on Android</a></li>
+    </ul>
+    <p>🎉 Use coupon code <strong>VEYLOVISIONARY</strong> for <strong>80% off</strong> your first year!</p>
+    <p>If you didn’t sign up for Veylo, you can ignore this email.</p>
+    <p>Best,<br>The Veylo Team</p>
+  `;
 
-Additionally, download our mobile app from the links below to start using Veylo on the go:
-- Download on iOS: ${downloadAppUrl} (iOS)
-- Download on Android: ${downloadAppUrl} (Android)
-
-Exclusive offer: use the coupon code VEYLOVISIONARY to get 80% off for your first year! Update your payment method and apply the code to take advantage of this special deal.
-
-If you have any questions or issues, feel free to reach out to our support team.
-
-Best regards,
-The Veylo Team
-
-If you did not sign up for Veylo, please ignore this email.`;
-
-  // Send the email using the sendEmail function
-  await sendEmail(to, subject, text);
+  await sendEmail(to, subject, text, html);
 };
 
-/**
- * Send an onboarding email
- * @param {PurchaseOrder} purchaseOrder - The generated password
- * @returns {Promise}
- */
 const sendPurchaseOrderEmail = async (purchaseOrder) => {
   const subject = `Purchase Order #${purchaseOrder.purchaseOrderNumber}`;
   const contactName = purchaseOrder.vendor.contactPerson?.name || purchaseOrder.vendor.companyName;
+  const email = purchaseOrder.vendor.contactPerson.email;
 
-  // Construct the email body
-  const text = `Dear ${contactName},\n\nPlease find attached the purchase order #${purchaseOrder.purchaseOrderNumber}.\n\nBest regards,\nThe Veylo Team`;
+  const text = `Dear ${contactName},\n\nPlease find attached the purchase order #${purchaseOrder.purchaseOrderNumber}.\n\nRegards,\nThe Veylo Team`;
 
-  // Generate the PDF for the purchase order
+  const html = `
+    <p>Dear ${contactName},</p>
+    <p>Please find attached the purchase order <strong>#${purchaseOrder.purchaseOrderNumber}</strong>.</p>
+    <p>Best regards,<br>The Veylo Team</p>
+  `;
+
   const pdfBuffer = await generatePurchaseOrderPDF(purchaseOrder);
 
-  // Send the email with the PDF attached
-  const msg = {
-    from: config.email.from,
-    to: purchaseOrder.vendor.contactPerson.email,
-    subject,
-    text,
-    attachments: [
-      {
-        filename: `purchase-order-${purchaseOrder.purchaseOrderNumber}.pdf`,
-        content: pdfBuffer,
-        contentType: 'application/pdf',
-      },
-    ],
-  };
-
-  await transport.sendMail(msg);
+  await sendEmail(email, subject, text, html, [
+    {
+      filename: `purchase-order-${purchaseOrder.purchaseOrderNumber}.pdf`,
+      content: pdfBuffer.toString('base64'),
+      type: 'application/pdf',
+      disposition: 'attachment',
+    },
+  ]);
 };
 
 module.exports = {
-  transport,
   sendEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,

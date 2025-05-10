@@ -31,6 +31,7 @@ const envVarsSchema = Joi.object()
     SENTRY_DSN: Joi.string().required().description('Sentry URL'),
     VAPID_PUBLIC_KEY: Joi.string().required().description('Public Web Push'),
     VAPID_PRIVATE_KEY: Joi.string().required().description('Private Web Push'),
+    RESEND_API_KEY: Joi.string().required().description('Resend Email Key'),
   })
   .unknown();
 
@@ -80,4 +81,5 @@ module.exports = {
   sentryDsn: envVars.SENTRY_DSN,
   vapidPublicKey: envVars.VAPID_PUBLIC_KEY,
   vapidPrivateKey: envVars.VAPID_PRIVATE_KEY,
+  resendApiKey: envVars.RESEND_API_KEY,
 };
