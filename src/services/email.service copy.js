@@ -1,10 +1,14 @@
-const nodemailer = require('nodemailer');
+//const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const config = require('../config/config');
 const logger = require('../config/logger');
 const PurchaseOrder = require('../models/purchaseOrder.model');
 const { generatePurchaseOrderPDF } = require('./pdf.service');
 
-const transport = nodemailer.createTransport(config.email.smtp);
+//const transport = nodemailer.createTransport(config.email.smtp);
+
+// Initialize Resend
+const resend = new Resend(config.email.resendApiKey);
 
 if (config.env !== 'test') {
   transport

@@ -33,7 +33,7 @@ const sendEmail = async (to, subject, text, html, attachments = []) => {
 
 const sendResetPasswordEmail = async (to, token) => {
   const subject = 'Reset your Veylo password';
-  const resetPasswordUrl = `https://veylo.app/resetpassword?token=${token}`;
+  const resetPasswordUrl = `https://auth.veylo.app/resetpassword?token=${token}`;
   const text = `Reset your password: ${resetPasswordUrl}`;
   const html = `
     <p>Dear user,</p>
@@ -47,7 +47,7 @@ const sendResetPasswordEmail = async (to, token) => {
 
 const sendVerificationEmail = async (to, token, name) => {
   const subject = 'Verify your email address';
-  const verificationUrl = `https://veylo.app/verifyemail?token=${token}`;
+  const verificationUrl = `https://auth.veylo.app/verifyemail?token=${token}`;
   const text = `Verify your account: ${verificationUrl}`;
   const html = `
     <p>Dear ${name},</p>
@@ -61,7 +61,7 @@ const sendVerificationEmail = async (to, token, name) => {
 
 const sendOnboardingEmail = async (to, name, password) => {
   const subject = 'Welcome to Veylo – Your Account Info';
-  const loginUrl = `https://veylo.app/login`;
+  const loginUrl = `https://auth.veylo.app/`;
   const downloadUrl = `https://veylo.app/download`;
 
   const text = `

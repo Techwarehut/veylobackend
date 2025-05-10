@@ -154,7 +154,7 @@ const generatePurchaseOrderPDF = async (purchaseOrder) => {
     doc.fontSize(12).text('SHIP TO', xPos, linePos, { bold: true, align: 'left', underline: true });
     doc.moveDown(0.5);
     linePos = doc.y;
-    doc.fontSize(10).text(`${purchaseOrder.vendor.companyName}`, 50, linePos, { bold: true, align: 'left' });
+    /*  doc.fontSize(10).text(`${purchaseOrder.vendor.companyName}`, 50, linePos, { bold: true, align: 'left' });
     doc.fontSize(10).text(`${purchaseOrder.tenantId.businessName}`, xPos, linePos, { bold: true, align: 'left' });
 
     linePos = doc.y;
@@ -184,6 +184,41 @@ const generatePurchaseOrderPDF = async (purchaseOrder) => {
         `${purchaseOrder.tenantId.businessBillingAddress.city || ''}, ${
           purchaseOrder.tenantId.businessBillingAddress.province || ''
         }, ${purchaseOrder.tenantId.businessBillingAddress.zipCode || ''}`,
+        xPos,
+        linePos,
+        { bold: true, align: 'left' }
+      );
+ */
+    // Vendor Info
+    doc.fontSize(10).text(`${purchaseOrder.vendor?.companyName || ''}`, 50, linePos, { bold: true, align: 'left' });
+    doc.fontSize(10).text(`${purchaseOrder.tenantId?.businessName || ''}`, xPos, linePos, { bold: true, align: 'left' });
+
+    linePos = doc.y;
+    doc.fontSize(10).text(`${purchaseOrder.vendor?.address?.AddressLine || ''}`, 50, linePos, { bold: true, align: 'left' });
+    doc
+      .fontSize(10)
+      .text(`${purchaseOrder.tenantId?.businessBillingAddress?.addressLine || ''}`, xPos, linePos, {
+        bold: true,
+        align: 'left',
+      });
+
+    linePos = doc.y;
+    doc
+      .fontSize(10)
+      .text(
+        `${purchaseOrder.vendor?.address?.City || ''}, ${purchaseOrder.vendor?.address?.Province || ''}, ${
+          purchaseOrder.vendor?.address?.zipcode || ''
+        }`,
+        50,
+        linePos,
+        { bold: true, align: 'left' }
+      );
+    doc
+      .fontSize(10)
+      .text(
+        `${purchaseOrder.tenantId?.businessBillingAddress?.city || ''}, ${
+          purchaseOrder.tenantId?.businessBillingAddress?.province || ''
+        }, ${purchaseOrder.tenantId?.businessBillingAddress?.zipCode || ''}`,
         xPos,
         linePos,
         { bold: true, align: 'left' }
